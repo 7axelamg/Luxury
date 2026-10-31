@@ -1,0 +1,333 @@
+<div class="app-container">
+  <app-sidebar #sidebar></app-sidebar>
+
+  <main class="main-content">
+    <!-- Top Bar Móvil -->
+    <div class="mobile-topbar">
+      <div class="mobile-topbar-brand">
+        <div class="mobile-logo">LS</div>
+        <span class="mobile-brand-name">Luxury Services</span>
+      </div>
+      <button class="hamburger-btn" (click)="sidebar.toggleMobile()">☰</button>
+    </div>
+
+    <!-- Toast Notification -->
+    @if (toastMessage()) {
+      <div class="toast-banner" [class.toast-error]="toastType() === 'error'">
+        <span>{{ toastMessage() }}</span>
+      </div>
+    }
+
+    <div class="page-wrapper">
+      <!-- Header de Página Mobile-First -->
+      <header class="page-header">
+        <div class="page-header-info">
+          <div class="page-eyebrow">EQUIPO Y SEGURIDAD</div>
+          <h1 class="page-title">Gestión de Empleados</h1>
+          <p class="page-subtitle">Administración de usuarios, asignación de roles y control de acceso</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-primary-mobile" (click)="openCreateModal()">
+            <span class="btn-icon">+</span>
+            <span>Nuevo Empleado</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Tabs de Navegación Móvil -->
+      <div class="mobile-tabs-container">
+        <button 
+          class="mobile-tab-btn" 
+          [class.active]="activeTab() === 'list'" 
+          (click)="activeTab.set('list')">
+          👥 Empleados ({{ employees().length }})
+        </button>
+        <button 
+          class="mobile-tab-btn" 
+          [class.active]="activeTab() === 'audit'" 
+          (click)="activeTab.set('audit')">
+          📜 Historial de Roles
+        </button>
+      </div>
+
+      <!-- TAB 1: LISTADO DE EMPLEADOS -->
+      @if (activeTab() === 'list') {
+        <!-- Barra de Búsqueda y Filtros Móviles -->
+        <div class="search-filter-section">
+          <div class="search-bar-wrap">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              class="mobile-search-input" 
+              placeholder="Buscar por nombre, cédula, cargo..." 
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)" />
+          </div>
+
+          <!-- Filtro rápido por Rol en formato Carrusel Horizontal -->
+          <div class="role-filter-chips">
+            <button 
+              class="filter-chip" 
+              [class.active]="roleFilter() === 'TODOS'"
+              (click)="roleFilter.set('TODOS')">
+              Todos
+            </button>
+            @for (r of ROLES_LIST; track r.value) {
+              <button 
+                class="filter-chip" 
+                [class.active]="roleFilter() === r.value"
+                (click)="roleFilter.set(r.value)">
+                {{ r.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (isLoading()) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando nómina de empleados...</p>
+          </div>
+        } @else if (filteredEmployees().length === 0) {
+          <div class="empty-card">
+            <div class="empty-icon">👥</div>
+            <h3>No se encontraron empleados</h3>
+            <p>Intenta con otro término de búsqueda o crea un nuevo registro.</p>
+          </div>
+        } @else {
+          <!-- Grid / Lista de Tarjetas de Empleados -->
+          <div class="employees-grid">
+            @for (emp of filteredEmployees(); track emp.id) {
+              <div class="employee-card" [class.inactive]="!emp.activo">
+                <!-- Cabecera de la Tarjeta -->
+                <div class="card-header">
+                  <div class="avatar-circle">
+                    {{ emp.nombre ? emp.nombre.charAt(0).toUpperCase() : 'U' }}
+                  </div>
+                  <div class="emp-main-info">
+                    <h3 class="emp-name">{{ emp.nombre }}</h3>
+                    <span class="emp-username">&#64;{{ emp.username }}</span>
+                    @if (emp.cargo) {
+                      <span class="emp-cargo">{{ emp.cargo }}</span>
+                    }
+                  </div>
+                  <div class="status-badge" [class.status-active]="emp.activo" [class.status-inactive]="!emp.activo">
+                    {{ emp.activo ? 'Activo' : 'Inactivo' }}
+                  </div>
+                </div>
+
+                <!-- Detalles de Contacto -->
+                <div class="card-details">
+                  @if (emp.documento) {
+                    <div class="detail-row">
+                      <span class="detail-icon">🪪</span>
+                      <span class="detail-text">C.C. {{ emp.documento }}</span>
+                    </div>
+                  }
+                  @if (emp.telefono) {
+                    <div class="detail-row">
+                      <span class="detail-icon">📱</span>
+                      <a href="tel:{{ emp.telefono }}" class="detail-link">{{ emp.telefono }}</a>
+                    </div>
+                  }
+                  @if (emp.email) {
+                    <div class="detail-row">
+                      <span class="detail-icon">✉️</span>
+                      <span class="detail-text">{{ emp.email }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Rol Asignado -->
+                <div class="role-box">
+                  <span class="role-label">Rol Operativo:</span>
+                  <span class="role-badge-tag" [ngClass]="getRoleBadge(emp.role)">
+                    {{ getRoleName(emp.role) }}
+                  </span>
+                </div>
+
+                <!-- Botones de Acción Táctiles (Mobile-First) -->
+                <div class="card-actions">
+                  <button class="btn-touch-action btn-edit" (click)="openEditModal(emp)">
+                    ✏️ Editar
+                  </button>
+                  <button class="btn-touch-action btn-role-change" (click)="openChangeRoleModal(emp)">
+                    🛡️ Cambiar Rol
+                  </button>
+                  <button 
+                    class="btn-touch-action" 
+                    [class.btn-deactivate]="emp.activo" 
+                    [class.btn-activate]="!emp.activo"
+                    (click)="toggleActiveStatus(emp)">
+                    {{ emp.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- TAB 2: AUDITORÍA DE CAMBIOS DE ROLES -->
+      @if (activeTab() === 'audit') {
+        <div class="audit-section">
+          <div class="audit-intro">
+            <h2 class="section-title">Registro de Auditoría de Seguridad</h2>
+            <p class="section-subtitle">Trazabilidad de asignaciones y cambios de roles en el sistema</p>
+          </div>
+
+          @if (auditLogs().length === 0) {
+            <div class="empty-card">
+              <p>Aún no hay registros de cambios de rol almacenados.</p>
+            </div>
+          } @else {
+            <div class="audit-timeline">
+              @for (log of auditLogs(); track log.id) {
+                <div class="audit-card">
+                  <div class="audit-meta">
+                    <span class="audit-date">📅 {{ log.created_at | date:'medium' }}</span>
+                    <span class="audit-actor">Asignado por: <strong>{{ log.assigned_by_username || 'Administración' }}</strong></span>
+                  </div>
+                  <div class="audit-body">
+                    <div class="audit-target">
+                      <span class="target-name">{{ log.target_nombre || log.target_username }}</span>
+                      <span class="target-user">(&#64;{{ log.target_username }})</span>
+                    </div>
+                    <div class="audit-change">
+                      <span class="role-from">{{ log.previous_role }}</span>
+                      <span class="arrow-indicator">➔</span>
+                      <span class="role-to" [ngClass]="getRoleBadge(log.new_role)">{{ getRoleName(log.new_role) }}</span>
+                    </div>
+                  </div>
+                  @if (log.motivo) {
+                    <div class="audit-reason">
+                      💬 <em>{{ log.motivo }}</em>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </main>
+</div>
+
+<!-- ── MODAL DE CREAR / EDITAR EMPLEADO ── -->
+@if (showEmployeeModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-drawer" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ isEditing() ? 'Editar Empleado' : 'Registrar Nuevo Empleado' }}</h2>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nombre Completo *</label>
+          <input type="text" class="form-input" placeholder="Ej. Juan Carlos Pérez" [(ngModel)]="employeeForm.nombre" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cédula / Documento</label>
+            <input type="text" class="form-input" placeholder="1020304050" [(ngModel)]="employeeForm.documento" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono Móvil</label>
+            <input type="tel" class="form-input" placeholder="+57 300 123 4567" [(ngModel)]="employeeForm.telefono" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Correo Electrónico</label>
+          <input type="email" class="form-input" placeholder="empleado@luxury.co" [(ngModel)]="employeeForm.email" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cargo Operativo</label>
+          <input type="text" class="form-input" placeholder="Ej. Asesor Técnico / Pintor" [(ngModel)]="employeeForm.cargo" />
+        </div>
+
+        <div class="form-divider">Credenciales de Acceso</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nombre de Usuario *</label>
+            <input type="text" class="form-input" [disabled]="isEditing()" placeholder="jperez" [(ngModel)]="employeeForm.username" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ isEditing() ? 'Nueva Contraseña (Opcional)' : 'Contraseña Inicial' }}</label>
+            <input type="password" class="form-input" placeholder="••••••••" [(ngModel)]="employeeForm.password" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rol en el Sistema *</label>
+          <select class="form-select" [(ngModel)]="employeeForm.role">
+            @for (r of ROLES_LIST; track r.value) {
+              <option [value]="r.value">{{ r.label }} — {{ r.desc }}</option>
+            }
+          </select>
+        </div>
+
+        @if (isEditing()) {
+          <div class="form-group">
+            <label class="form-label">Motivo de la Modificación</label>
+            <input type="text" class="form-input" placeholder="Ej. Cambio de cargo / actualización de contacto" [(ngModel)]="employeeForm.motivo_cambio_rol" />
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" (click)="closeModal()">Cancelar</button>
+        <button class="btn-modal-save" (click)="saveEmployee()">
+          {{ isEditing() ? 'Guardar Cambios' : 'Registrar Empleado' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── MODAL CAMBIO RÁPIDO DE ROL CON AUDITORÍA ── -->
+@if (showRoleModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-drawer modal-compact" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">🛡️ Asignar Nuevo Rol</h2>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Modificando permisos y nivel de acceso para <strong>{{ selectedEmployeeForRole()?.nombre }}</strong>.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Seleccionar Nuevo Rol *</label>
+          <select class="form-select" [ngModel]="newRoleSelection()" (ngModelChange)="newRoleSelection.set($event)">
+            @for (r of ROLES_LIST; track r.value) {
+              <option [value]="r.value">{{ r.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Motivo o Justificación del Cambio</label>
+          <textarea 
+            class="form-textarea" 
+            rows="2" 
+            placeholder="Ej. Promoción de cargo, reasignación a etapa de cotización..." 
+            [ngModel]="roleChangeReason()"
+            (ngModelChange)="roleChangeReason.set($event)"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" (click)="closeModal()">Cancelar</button>
+        <button class="btn-modal-save" (click)="confirmRoleChange()">Confirmar y Registrar</button>
+      </div>
+    </div>
+  </div>
+}

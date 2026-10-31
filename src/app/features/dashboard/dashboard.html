@@ -1,0 +1,297 @@
+<div class="app-container">
+  <app-sidebar #sidebar></app-sidebar>
+
+  <main class="main-content">
+    <!-- ── Mobile Top Bar ── -->
+    <div class="mobile-topbar">
+      <div class="mobile-topbar-brand">
+        <div class="mobile-logo">LS</div>
+        <span class="mobile-brand-name">Luxury Services</span>
+      </div>
+      <button class="hamburger-btn" (click)="sidebar.toggleMobile()">☰</button>
+    </div>
+
+    <div class="page-wrapper">
+
+
+      <!-- ── Page Header ── -->
+      <header class="page-header">
+        <div class="page-header-left">
+          <div class="page-eyebrow">{{ isSuperAdmin ? "Vista General del Sistema" : "Area de Trabajo" }}</div>
+          <h1 class="page-title">Tablero Principal</h1>
+          <p class="page-subtitle">
+            @if (isSuperAdmin) {
+              Supervision integral · todas las etapas y equipos
+            } @else {
+              <span class="role-highlight">{{ roleBadge.icon }} {{ roleBadge.label }}</span> — {{ roleDescription }}
+            }
+          </p>
+        </div>
+        <div class="page-header-right">
+          @if (canCreateReception) {
+            <button class="btn-new-order" routerLink="/reception">
+              <span class="btn-icon">+</span>
+              Nueva Recepcion
+            </button>
+          }
+        </div>
+      </header>
+
+      <!-- ── Role Scope Toggle ── -->
+      @if (!isSuperAdmin) {
+        <div class="scope-bar">
+          <div class="scope-bar-left">
+            <span class="scope-title">Mostrando:</span>
+            <div class="scope-pills">
+              <button class="scope-pill" [class.active]="filterScope === 'MI_ETAPA'" (click)="setFilterScope('MI_ETAPA')">
+                Mis Pendientes
+                <span class="scope-pill-count">{{ stats.enMiEtapa }}</span>
+              </button>
+              <button class="scope-pill" [class.active]="filterScope === 'TODOS'" (click)="setFilterScope('TODOS')">
+                Ver Todos
+              </button>
+            </div>
+          </div>
+          <div class="scope-bar-right">
+            <span class="assigned-label">Tus etapas:</span>
+            @for (step of assignedSteps; track step) {
+              <span class="step-tag">E{{ step }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── KPI Stats Row ── -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap">&#128663;</div>
+          <div class="kpi-content">
+            <span class="kpi-number">{{ stats.activos }}</span>
+            <span class="kpi-label">Vehiculos Activos</span>
+          </div>
+          <div class="kpi-accent-line kpi-line-red"></div>
+        </div>
+
+        @if (!isSuperAdmin) {
+          <div class="kpi-card kpi-alert kpi-clickable" 
+               (click)="setFilterScope('MI_ETAPA')" 
+               title="Ver sólo las órdenes de mi etapa">
+            <div class="kpi-icon-wrap">&#128295;</div>
+            <div class="kpi-content">
+              <span class="kpi-number kpi-red">{{ stats.enMiEtapa }}</span>
+              <span class="kpi-label">En Mi Etapa (Filtrar)</span>
+            </div>
+            <div class="kpi-accent-line kpi-line-red"></div>
+          </div>
+        } @else {
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap">&#9203;</div>
+            <div class="kpi-content">
+              <span class="kpi-number">{{ stats.pendientes }}</span>
+              <span class="kpi-label">Pendientes</span>
+            </div>
+            <div class="kpi-accent-line kpi-line-amber"></div>
+          </div>
+        }
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap">&#9989;</div>
+          <div class="kpi-content">
+            <span class="kpi-number kpi-green">{{ stats.entregadosHoy }}</span>
+            <span class="kpi-label">Entregados Hoy</span>
+          </div>
+          <div class="kpi-accent-line kpi-line-green"></div>
+        </div>
+      </div>
+
+      <!-- ── Compact Mobile-First Stage Status ── -->
+      <div class="compact-stage-card">
+        <div class="compact-stage-main">
+          <div class="compact-stage-info">
+            <span class="compact-stage-eyebrow">FLUJO OPERATIVO ACTIVO</span>
+            <div class="compact-stage-title-wrap">
+              <h3 class="compact-stage-title">
+                {{ isSuperAdmin ? '1. Checklist Ingreso ➔ 2. Cotización & Factura' : roleTitle }}
+              </h3>
+              <span class="compact-orders-badge">{{ stats.activos }} órdenes activas</span>
+            </div>
+            <p class="compact-stage-desc">
+              {{ isSuperAdmin ? 'Supervisando 2 etapas operativas y facturación en tiempo real.' : roleDescription }}
+            </p>
+          </div>
+          
+          <button type="button" class="btn-toggle-all-stages" (click)="showAllStagesModal = !showAllStagesModal">
+            <span>{{ showAllStagesModal ? 'Ocultar etapas ▲' : 'Ver todas las etapas ▼' }}</span>
+          </button>
+        </div>
+
+        <!-- Barra de Progreso Compacta -->
+        <div class="compact-pipeline-progress">
+          <div class="compact-progress-bar">
+            <div class="compact-progress-fill" [style.width.%]="stats.activos > 0 ? (getOrdersCountByStep(2) / stats.activos * 100) : 0"></div>
+          </div>
+          <div class="compact-progress-labels">
+            <span>Etapa 1 (Ingreso): <strong>{{ getOrdersCountByStep(1) }}</strong></span>
+            <span>Etapa 2 (Facturación): <strong>{{ getOrdersCountByStep(2) }}</strong></span>
+            <span>Entregados: <strong>{{ stats.entregadosHoy }}</strong></span>
+          </div>
+        </div>
+
+        <!-- Desplegable Modal / Drawer de todas las etapas -->
+        @if (showAllStagesModal) {
+          <div class="expanded-stages-drawer">
+            <div class="expanded-stages-grid">
+              @for (paso of roleService.PASOS; track paso.id) {
+                <div class="expanded-stage-card" [class.is-mine]="assignedSteps.includes(paso.id)">
+                  <div class="expanded-stage-header">
+                    <span class="expanded-stage-num">Etapa {{ paso.id }}</span>
+                    @if (assignedSteps.includes(paso.id)) {
+                      <span class="expanded-mine-tag">Tu Área</span>
+                    }
+                  </div>
+                  <h4 class="expanded-stage-name">{{ paso.nombre }}</h4>
+                  <p class="expanded-stage-resp">👤 {{ paso.responsable }}</p>
+                  <div class="expanded-stage-count">
+                    <strong>{{ getOrdersCountByStep(paso.id) }}</strong> órdenes en esta etapa
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ── Orders Section ── -->
+      <div class="orders-panel">
+        <div class="orders-panel-header">
+          <div class="orders-title-row">
+            <h2 class="orders-title">
+              @if (!isSuperAdmin && filterScope === "MI_ETAPA") {
+                Ordenes Pendientes en Mi Etapa
+              } @else {
+                Ordenes Activas del Sistema
+              }
+            </h2>
+            <span class="orders-count-chip">{{ filteredOrders.length }}</span>
+          </div>
+          <div class="orders-search">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" class="search-input" placeholder="Buscar por placa, cliente o ID de orden..." [(ngModel)]="searchTerm">
+          </div>
+        </div>
+
+        @if (isLoading) {
+          <div class="state-center">
+            <div class="spinner"></div>
+            <p class="state-label">Cargando ordenes...</p>
+          </div>
+        }
+
+        @if (errorMessage) {
+          <div class="error-banner">
+            <span>&#9888;&#65039;</span>
+            <span>{{ errorMessage }}</span>
+          </div>
+        }
+
+        @if (!isLoading && !errorMessage) {
+          <div class="orders-grid">
+            @for (order of filteredOrders; track order.id) {
+              <div class="order-card" [class.order-card-mine]="isOrderForCurrentUser(order)" [routerLink]="['/order', order.id]">
+
+                <!-- Card Header -->
+                <div class="card-header">
+                  <div class="card-header-left">
+                    @if (order.placa) {
+                      <span class="card-plate-badge">{{ order.placa }}</span>
+                    }
+                    <span class="card-order-id">{{ order.id }}</span>
+                    @if (isOrderForCurrentUser(order)) {
+                      <span class="turn-badge">&#9679; Tu Turno</span>
+                    }
+                  </div>
+                  <span class="card-arrow-icon">&#8594;</span>
+                </div>
+
+                <!-- Vehicle Title -->
+                <div class="card-vehicle-title">{{ order.vehiculo }}</div>
+
+                <!-- Traceability Line (CAMBIO 4) -->
+                <div class="card-trace-meta">
+                  <span class="card-trace-item">📥 Recibido por: <strong>{{ order.recepcionista || 'Alejandro Gómez' }}</strong></span>
+                  <span class="card-trace-sep">•</span>
+                  <span class="card-trace-item">👤 Asignado: <strong>{{ getAsignadoActual(order) }}</strong></span>
+                </div>
+
+                <!-- State Status Line -->
+                <div class="card-status-banner">
+                  <span class="badge-status-line" [ngClass]="getEstadoClass(order.estado)">
+                    {{ order.estado }}
+                  </span>
+                </div>
+
+                <!-- Info Grid 2x2 -->
+                <div class="card-info-grid">
+                  <div class="card-info-cell">
+                    <span class="cell-label">&#128100; Cliente</span>
+                    <span class="cell-value">{{ order.cliente }}</span>
+                  </div>
+                  <div class="card-info-cell">
+                    <span class="cell-label">&#128205; Etapa Actual</span>
+                    <span class="cell-value cell-stage">{{ getPasoLabel(order.pasoActual) }}</span>
+                  </div>
+                  <div class="card-info-cell">
+                    <span class="cell-label">&#128197; Ingreso</span>
+                    <span class="cell-value">{{ order.fechaIngreso | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                  <div class="card-info-cell">
+                    <span class="cell-label">&#128295; Responsable</span>
+                    <span class="cell-value">{{ getResponsablePaso(order.pasoActual) }}</span>
+                  </div>
+                </div>
+
+                <!-- Progress Footer -->
+                <div class="card-progress-footer">
+                  <div class="progress-steps-row">
+                    @for (step of [1,2,3,4,5]; track step) {
+                      <div class="prog-step" [class.prog-done]="order.pasoActual > step" [class.prog-active]="order.pasoActual === step"></div>
+                    }
+                  </div>
+                  <div class="progress-legend">
+                    <span class="prog-label">Etapa {{ order.pasoActual }} de 5</span>
+                    <span class="prog-pct">{{ getProgreso(order.pasoActual) }}%</span>
+                  </div>
+                </div>
+
+              </div>
+            }
+
+            @if (filteredOrders.length === 0 && !isLoading) {
+              <div class="empty-state">
+                @if (orders.length === 0) {
+                  <div class="empty-icon">&#128203;</div>
+                  <p class="empty-title">Sin ordenes activas</p>
+                  <p class="empty-sub">El sistema no tiene vehiculos en proceso actualmente.</p>
+                  @if (canCreateReception) {
+                    <button class="btn-new-order" routerLink="/reception">+ Crear Primera Recepcion</button>
+                  }
+                } @else {
+                  <div class="empty-icon">&#10003;</div>
+                  <p class="empty-title">Todo al dia</p>
+                  <p class="empty-sub">
+                    @if (filterScope === "MI_ETAPA") {
+                      No hay ordenes pendientes en tu etapa en este momento.
+                    } @else {
+                      Ningun resultado coincide con "{{ searchTerm }}".
+                    }
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+    </div>
+  </main>
+</div>

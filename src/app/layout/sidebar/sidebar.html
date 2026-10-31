@@ -1,0 +1,130 @@
+<!-- Mobile overlay backdrop -->
+<div class="sidebar-overlay" [class.visible]="mobileOpen" (click)="closeOverlay()"></div>
+
+<aside class="sidebar" [class.mobile-open]="mobileOpen">
+  <!-- Header / Brand -->
+  <div class="sidebar-header">
+    <div class="logo">LS</div>
+    <div class="brand">
+      <h3>Luxury Services</h3>
+      <span>Vehicle Management</span>
+    </div>
+    <button class="sidebar-close-btn" (click)="closeOverlay()">✕</button>
+  </div>
+
+  <!-- Pending Work Notification Card (only when there are pending items) -->
+  @if (notifications.myStepCount > 0) {
+    <div class="notif-card clickable-notif" 
+         (click)="togglePendingModal()" 
+         title="Haz clic para ver la lista de trabajos por revisar">
+      <div class="notif-card-inner">
+        <div class="notif-icon">🔔</div>
+        <div class="notif-body">
+          <span class="notif-label">{{ notifications.label }}</span>
+          <span class="notif-sub">{{ notifications.myStepCount }} pendiente{{ notifications.myStepCount > 1 ? 's' : '' }} • Toca para ver lista</span>
+        </div>
+        <div class="notif-arrow">❯</div>
+      </div>
+    </div>
+  }
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    @for (item of menuItems; track item.route) {
+      <a [routerLink]="item.route"
+         routerLinkActive="active"
+         class="nav-item">
+        <span class="nav-icon">
+          {{ item.icon === 'dashboard' ? '📊'
+           : item.icon === 'add_circle' ? '➕'
+           : item.icon === 'history' ? '🕒'
+           : '⚙️' }}
+        </span>
+        <span class="nav-label">{{ item.label }}</span>
+        @if (item.badge) {
+          <span class="nav-badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <!-- Footer / User -->
+  <div class="sidebar-footer">
+    @if (currentUser) {
+      <div class="user-card">
+        <div class="user-avatar">{{ currentUser.username.charAt(0).toUpperCase() }}</div>
+        <div class="user-details">
+          <span class="user-name">{{ currentUser.username }}</span>
+          <span class="user-role" [ngClass]="getRoleBadge(currentUser.role).class">
+            {{ getRoleBadge(currentUser.role).icon }} {{ getRoleBadge(currentUser.role).label }}
+          </span>
+        </div>
+      </div>
+    }
+    <button class="logout-btn" (click)="logout()">
+      <span>🚪</span>
+      <span>Cerrar Sesión</span>
+    </button>
+  </div>
+</aside>
+
+<!-- MODAL / DRAWER DE TRABAJOS PENDIENTES POR REVISAR -->
+@if (showPendingModal) {
+  <div class="pending-modal-overlay" (click)="closePendingModal()">
+    <div class="pending-modal-dialog" (click)="$event.stopPropagation()">
+      <div class="pending-modal-header">
+        <div class="pending-header-info">
+          <div class="pending-header-badge">
+            <span class="pulse-dot"></span>
+            <span>{{ notifications.myStepCount }} trabajos pendientes</span>
+          </div>
+          <h3 class="pending-modal-title">Trabajos por Revisar</h3>
+          <p class="pending-modal-role">Órdenes asignadas a tu área: <strong>{{ roleTitle }}</strong></p>
+        </div>
+        <button class="pending-close-btn" (click)="closePendingModal()" title="Cerrar ventana">✕</button>
+      </div>
+
+      <div class="pending-orders-container">
+        @for (order of notifications.myPendingOrders; track order.id) {
+          <div class="pending-order-card" (click)="openOrder(order.id)">
+            <div class="pending-card-top">
+              @if (order.placa) {
+                <span class="pending-plate-badge">{{ order.placa }}</span>
+              }
+              <span class="pending-step-tag">{{ getPasoLabel(order.pasoActual) }}</span>
+            </div>
+            <div class="pending-vehicle-title">{{ order.vehiculo }}</div>
+            <div class="pending-meta-row">
+              <span class="pending-client-name">👤 {{ order.cliente }}</span>
+              <span class="pending-order-code">{{ order.id }}</span>
+            </div>
+            @if (order.observaciones) {
+              <div class="pending-obs-snippet">"{{ order.observaciones }}"</div>
+            }
+            <div class="pending-card-footer">
+              <span class="pending-urgency-dot">● Requiere atención</span>
+              <button class="btn-review-now" (click)="openOrder(order.id); $event.stopPropagation()">
+                Revisar Orden →
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (notifications.myPendingOrders.length === 0) {
+          <div class="pending-empty-state">
+            <div class="empty-icon">🎉</div>
+            <h4>¡Estás al día!</h4>
+            <p>No tienes vehículos o trabajos pendientes de revisión en tu etapa en este momento.</p>
+          </div>
+        }
+      </div>
+
+      <div class="pending-modal-footer">
+        <button class="btn-all-dashboard" (click)="viewInDashboard()">
+          📊 Ver todas en el Tablero de Órdenes
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

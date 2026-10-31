@@ -1,0 +1,249 @@
+<div class="app-container">
+  <app-sidebar #sidebar></app-sidebar>
+  
+  <main class="main-content">
+    <!-- Mobile Top Bar -->
+    <div class="mobile-topbar">
+      <div class="mobile-topbar-brand">
+        <div class="mobile-logo">LS</div>
+        <span class="mobile-brand-name">Luxury Services</span>
+      </div>
+      <button class="hamburger-btn" (click)="sidebar.toggleMobile()">&#9776;</button>
+    </div>
+
+    <div class="page-wrapper">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Historial de Servicios</h1>
+          <p class="text-muted">
+            @if (isSuperAdmin) {
+              Registro completo de todos los vehículos atendidos
+            } @else {
+              Vehículos que han pasado por tu etapa: <strong>{{ roleLabel }}</strong>
+            }
+          </p>
+        </div>
+        @if (canCreateReception) {
+          <button class="btn btn-primary" routerLink="/reception">
+            + Nueva Recepción
+          </button>
+        }
+      </header>
+
+      <!-- Role Context Banner (non-admin users) -->
+      @if (!isSuperAdmin) {
+        <div class="role-context-banner glass-panel mb-4">
+          <div class="role-banner-icon">🔍</div>
+          <div class="role-banner-text">
+            <strong>Vista filtrada por tu rol:</strong> Estás viendo el historial de órdenes que han pasado por
+            <span class="role-highlight">
+              @for (step of assignedSteps; track step) {
+                Etapa {{ step }}@if ($index < assignedSteps.length - 1) { , }
+              }
+            </span>
+            — tu área de trabajo.
+          </div>
+          @if (!isSuperAdmin) {
+            <button
+              class="scope-toggle-btn"
+              [class.active]="selectedFilter === 'TODOS'"
+              (click)="setFilter(selectedFilter === 'TODOS' ? 'MI_ETAPA' : 'TODOS')">
+              {{ selectedFilter === 'TODOS' ? '🔒 Solo mi etapa' : '🌐 Ver todos' }}
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Filter Controls Bar -->
+      <div class="history-controls glass-panel mb-4">
+        <div class="search-box">
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="🔍 Buscar por ID con fecha (ej: ORD-20260925), placa o cliente..."
+            [(ngModel)]="searchTerm"
+          >
+        </div>
+
+        <div class="status-filter-pills">
+          <button 
+            type="button" 
+            class="filter-pill-btn" 
+            [class.active]="filtroEstado === 'TODOS'"
+            (click)="setFiltroEstado('TODOS')">
+            Todos ({{ orders.length }})
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill-btn delivered" 
+            [class.active]="filtroEstado === 'ENTREGADOS'"
+            (click)="setFiltroEstado('ENTREGADOS')">
+            🏆 Entregados y Cerrados ({{ totalEntregados }})
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill-btn in-progress" 
+            [class.active]="filtroEstado === 'EN_CURSO'"
+            (click)="setFiltroEstado('EN_CURSO')">
+            ⚡ En Proceso Activo ({{ totalEnCurso }})
+          </button>
+        </div>
+
+        <div class="results-count">
+          <span>{{ filteredOrders.length }} registro(s)</span>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      @if (isLoading) {
+        <div class="loading-state glass-panel">
+          <span class="spinner-lg"></span>
+          <p>Cargando historial de vehículos...</p>
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (errorMessage) {
+        <div class="error-state glass-panel">
+          <p>⚠️ {{ errorMessage }}</p>
+        </div>
+      }
+
+      <!-- Orders Historic Cards -->
+      @if (!isLoading && !errorMessage) {
+        <div class="history-cards-container">
+          @for (order of filteredOrders; track order.id) {
+            <div class="history-card glass-panel" [class.delivered-card]="order.pasoActual >= 6" [routerLink]="['/order', order.id]">
+              <div class="history-card-header">
+                <div class="header-left">
+                  <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <span class="order-id-badge">{{ order.id }}</span>
+                    @if (order.pasoActual >= 6) {
+                      <span class="actas-sealed-badge">🏆 Todas las Actas Firmadas</span>
+                    } @else {
+                      <span class="step-role-badge">👤 A cargo de: {{ getResponsablePaso(order.pasoActual) }}</span>
+                    }
+                  </div>
+                  <h3 class="vehicle-title">{{ order.vehiculo }}</h3>
+                  <span class="client-name">👤 Propietario: <strong>{{ order.cliente }}</strong></span>
+                </div>
+                <div class="header-right">
+                  <span class="badge" [ngClass]="getEstadoClass(order.estado)">{{ order.estado }}</span>
+                  <span class="step-badge">{{ getPasoLabel(order.pasoActual) }}</span>
+                  <span class="admission-date">📅 {{ order.fechaIngreso | date:'mediumDate' }}</span>
+                </div>
+              </div>
+
+              <!-- Progress Steps Timeline (2 Pasos Operativos) -->
+              <div class="history-timeline-bar">
+                <div class="timeline-step" [class.done]="order.pasoActual > 1" [class.current]="order.pasoActual === 1">
+                  <div class="timeline-dot">1</div>
+                  <span class="timeline-label">Checklist Ingreso</span>
+                </div>
+                <div class="timeline-line" [class.done]="order.pasoActual > 1"></div>
+
+                <div class="timeline-step" [class.done]="order.pasoActual > 2" [class.current]="order.pasoActual === 2">
+                  <div class="timeline-dot">2</div>
+                  <span class="timeline-label">Cotización & Factura</span>
+                </div>
+                <div class="timeline-line" [class.done]="order.pasoActual >= 3"></div>
+
+                <div class="timeline-step" [class.done]="order.pasoActual >= 3" [class.current]="order.pasoActual >= 3">
+                  <div class="timeline-dot">✓</div>
+                  <span class="timeline-label">Entregado</span>
+                </div>
+              </div>
+
+              <div class="history-card-body">
+                <!-- Details -->
+                <div class="order-specs">
+                  @if (order.kilometraje) {
+                    <div class="spec-item">
+                      <span class="spec-label">Kilometraje:</span>
+                      <span class="spec-val">{{ order.kilometraje | number }} km</span>
+                    </div>
+                  }
+                  @if (order.pertenencias) {
+                    <div class="spec-item">
+                      <span class="spec-label">Pertenencias:</span>
+                      <span class="spec-val">{{ order.pertenencias }}</span>
+                    </div>
+                  }
+                  @if (order.observaciones) {
+                    <div class="spec-item full-width">
+                      <span class="spec-label">Observaciones:</span>
+                      <span class="spec-val">{{ order.observaciones }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Photos Mini-Gallery -->
+                <div class="history-photos-preview">
+                  <span class="photos-title">📷 Fotografías de Evidencia:</span>
+                  @if (order.fotos && order.fotos.length > 0) {
+                    <div class="mini-photos-row">
+                      @for (foto of order.fotos; track $index) {
+                        <div class="mini-photo-thumb" (click)="openPhoto(foto, $event)" title="Clic para ampliar">
+                          <img [src]="foto" alt="Evidencia vehículo">
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <span class="no-photos-tag">Registro visual almacenado en expediente</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="history-card-footer">
+                <div class="footer-left">
+                  @if (order.pasoActual >= 6) {
+                    <span class="seal-text">🏛️ Expediente auditado y archivado formalmente.</span>
+                  } @else {
+                    <span class="seal-text">En proceso — Paso activo: {{ getPasoLabel(order.pasoActual) }}</span>
+                  }
+                </div>
+                <div class="footer-right">
+                  <button class="btn btn-primary btn-sm">
+                    Ver Expediente y Actas →
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (filteredOrders.length === 0 && orders.length > 0) {
+            <div class="empty-state glass-panel">
+              <div class="empty-icon">🔍</div>
+              <p>No se encontraron órdenes con los filtros actuales.</p>
+              <button class="btn btn-outline btn-sm" (click)="searchTerm = ''; setFilter('TODOS')">
+                Limpiar filtros
+              </button>
+            </div>
+          }
+
+          @if (orders.length === 0) {
+            <div class="empty-state glass-panel">
+              <div class="empty-icon">📋</div>
+              <p>No hay registros históricos en el sistema.</p>
+              @if (isSuperAdmin) {
+                <a routerLink="/reception" class="btn btn-primary btn-sm">Crear primera recepción</a>
+              }
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </main>
+
+  <!-- Lightbox Modal -->
+  @if (selectedPhoto) {
+    <div class="photo-modal-backdrop" (click)="closePhoto()">
+      <div class="photo-modal-content" (click)="$event.stopPropagation()">
+        <img [src]="selectedPhoto" alt="Evidencia histórica ampliada">
+        <button type="button" class="close-modal-btn" (click)="closePhoto()">✕ Cerrar Vista</button>
+      </div>
+    </div>
+  }
+</div>

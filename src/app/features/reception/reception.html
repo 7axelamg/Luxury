@@ -1,0 +1,184 @@
+<div class="app-container">
+  <app-sidebar #sidebar></app-sidebar>
+  
+  <main class="main-content">
+    <!-- Mobile Top Bar -->
+    <div class="mobile-topbar">
+      <div class="mobile-topbar-brand">
+        <div class="mobile-logo">LS</div>
+        <span class="mobile-brand-name">Luxury Services</span>
+      </div>
+      <button class="hamburger-btn" (click)="sidebar.toggleMobile()">&#9776;</button>
+    </div>
+
+    <div class="page-wrapper">
+
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Nueva Recepción</h1>
+          <p class="text-muted">Registro de cliente y vehículo al ingreso</p>
+        </div>
+        <button class="btn btn-outline" routerLink="/dashboard">
+          Cancelar
+        </button>
+      </header>
+
+      <form [formGroup]="receptionForm" (ngSubmit)="onSubmit()" class="reception-form" novalidate>
+        
+        <div class="form-grid">
+          <!-- Datos del Cliente -->
+          <div class="glass-panel section-panel">
+            <div class="section-panel-header">
+              <span class="panel-icon">👤</span>
+              <h3 class="section-title">Datos del Propietario / Cliente</h3>
+            </div>
+            
+            <div class="form-group" [class.has-error]="isFieldInvalid('nombreCliente')">
+              <label class="form-label">Nombre Completo *</label>
+              <input type="text" formControlName="nombreCliente" class="form-control" placeholder="Ej. Sebastián Alarcón">
+              @if (isFieldInvalid('nombreCliente')) {
+                <span class="field-error-msg">{{ getFieldError('nombreCliente') }}</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half" [class.has-error]="isFieldInvalid('documento')">
+                <label class="form-label">Documento / C.C. / NIT *</label>
+                <input 
+                  type="text" 
+                  appNumbersOnly
+                  inputmode="numeric"
+                  maxlength="12"
+                  formControlName="documento" 
+                  class="form-control font-mono" 
+                  placeholder="Ej. 1098273645">
+                @if (isFieldInvalid('documento')) {
+                  <span class="field-error-msg">{{ getFieldError('documento') }}</span>
+                }
+              </div>
+
+              <div class="form-group half" [class.has-error]="isFieldInvalid('telefono')">
+                <label class="form-label">Teléfono Móvil (10 dígitos) *</label>
+                <input 
+                  type="tel" 
+                  appNumbersOnly
+                  inputmode="numeric"
+                  maxlength="10"
+                  formControlName="telefono" 
+                  class="form-control font-mono" 
+                  placeholder="Ej. 3108892211">
+                @if (isFieldInvalid('telefono')) {
+                  <span class="field-error-msg">{{ getFieldError('telefono') }}</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Datos del Vehículo -->
+          <div class="glass-panel section-panel">
+            <div class="section-panel-header">
+              <span class="panel-icon">🏎️</span>
+              <h3 class="section-title">Datos del Vehículo</h3>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half" [class.has-error]="isFieldInvalid('placa')">
+                <label class="form-label">Placa (Máx 6 alfanuméricos) *</label>
+                <input 
+                  type="text" 
+                  appUppercase
+                  maxlength="6"
+                  formControlName="placa" 
+                  class="form-control font-mono font-bold text-uppercase" 
+                  placeholder="ABC123">
+                @if (isFieldInvalid('placa')) {
+                  <span class="field-error-msg">{{ getFieldError('placa') }}</span>
+                }
+              </div>
+
+              <div class="form-group half" [class.has-error]="isFieldInvalid('marca')">
+                <label class="form-label">Marca *</label>
+                <input type="text" formControlName="marca" class="form-control" placeholder="Ej. Ferrari / BMW / Porsche">
+                @if (isFieldInvalid('marca')) {
+                  <span class="field-error-msg">{{ getFieldError('marca') }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half" [class.has-error]="isFieldInvalid('modelo')">
+                <label class="form-label">Línea / Modelo *</label>
+                <input type="text" formControlName="modelo" class="form-control" placeholder="Ej. Roma V8 Twin-Turbo">
+                @if (isFieldInvalid('modelo')) {
+                  <span class="field-error-msg">{{ getFieldError('modelo') }}</span>
+                }
+              </div>
+
+              <div class="form-group half" [class.has-error]="isFieldInvalid('color')">
+                <label class="form-label">Color *</label>
+                <input type="text" formControlName="color" class="form-control" placeholder="Ej. Rosso Corsa Metálico">
+                @if (isFieldInvalid('color')) {
+                  <span class="field-error-msg">{{ getFieldError('color') }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evidencias y Detalles -->
+        <div class="glass-panel section-panel mt-4">
+          <div class="section-panel-header">
+            <span class="panel-icon">📋</span>
+            <h3 class="section-title">Pertenencias e Inspección Fotográfica</h3>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group half">
+              <label class="form-label">Pertenencias Declaradas en el Vehículo</label>
+              <textarea formControlName="pertenencias" class="form-control" rows="3" placeholder="Ej: Gafas de sol en portagafas central, paraguas oficial en baúl..."></textarea>
+            </div>
+            <div class="form-group half">
+              <label class="form-label">Observaciones de Ingreso / Averías Previas</label>
+              <textarea formControlName="observaciones" class="form-control" rows="3" placeholder="Ej: Rayón superficial en guardabarros derecho, rines diamantados en buen estado..."></textarea>
+            </div>
+          </div>
+
+          <div class="photo-upload-section mt-3">
+            <label class="form-label">Fotografías de Evidencia Inicial (Máx. 5 fotos)</label>
+            <div class="photo-grid">
+              @for (foto of fotos; track $index) {
+                <div class="photo-preview">
+                  <img [src]="foto" alt="Evidencia">
+                  <button type="button" class="remove-photo-btn" (click)="removeFoto($index)" title="Eliminar foto">✕</button>
+                </div>
+              }
+              @if (fotos.length < 5) {
+                <div class="photo-upload-btn" (click)="fileInput.click()">
+                  <span>📷 + Añadir Fotografía</span>
+                  <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" multiple hidden>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        @if (errorMessage) {
+          <div class="reception-error mt-3">
+            ⚠️ {{ errorMessage }}
+          </div>
+        }
+
+        <div class="form-actions mt-4">
+          <button type="submit" class="btn btn-primary btn-large btn-full-mobile" [disabled]="receptionForm.invalid || isLoading">
+            @if (isLoading) {
+              <span class="spinner"></span> Registrando Recepción...
+            } @else {
+              ✓ Confirmar Recepción e Iniciar Orden
+            }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </main>
+</div>
