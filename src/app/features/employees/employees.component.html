@@ -8,7 +8,9 @@
         <div class="mobile-logo">LS</div>
         <span class="mobile-brand-name">Luxury Services</span>
       </div>
-      <button class="hamburger-btn" (click)="sidebar.toggleMobile()">☰</button>
+      <button class="hamburger-btn" (click)="sidebar.toggleMobile()" aria-label="Abrir menú">
+        <app-icon name="menu" [size]="18"></app-icon>
+      </button>
     </div>
 
     <!-- Toast Notification -->
@@ -27,8 +29,8 @@
           <p class="page-subtitle">Administración de usuarios, asignación de roles y control de acceso</p>
         </div>
         <div class="page-header-actions">
-          <button class="btn-primary-mobile" (click)="openCreateModal()">
-            <span class="btn-icon">+</span>
+          <button class="btn btn-primary" (click)="openCreateModal()">
+            <app-icon name="plus" [size]="14"></app-icon>
             <span>Nuevo Empleado</span>
           </button>
         </div>
@@ -40,13 +42,15 @@
           class="mobile-tab-btn" 
           [class.active]="activeTab() === 'list'" 
           (click)="activeTab.set('list')">
-          👥 Empleados ({{ employees().length }})
+          <app-icon name="users" [size]="14"></app-icon>
+          <span>Empleados ({{ employees().length }})</span>
         </button>
         <button 
           class="mobile-tab-btn" 
           [class.active]="activeTab() === 'audit'" 
           (click)="activeTab.set('audit')">
-          📜 Historial de Roles
+          <app-icon name="file-text" [size]="14"></app-icon>
+          <span>Historial de Roles</span>
         </button>
       </div>
 
@@ -55,7 +59,7 @@
         <!-- Barra de Búsqueda y Filtros Móviles -->
         <div class="search-filter-section">
           <div class="search-bar-wrap">
-            <span class="search-icon">🔍</span>
+            <app-icon name="search" [size]="16" extraClass="search-icon"></app-icon>
             <input 
               type="text" 
               class="mobile-search-input" 
@@ -90,7 +94,7 @@
           </div>
         } @else if (filteredEmployees().length === 0) {
           <div class="empty-card">
-            <div class="empty-icon">👥</div>
+            <div class="empty-icon"><app-icon name="users" [size]="32"></app-icon></div>
             <h3>No se encontraron empleados</h3>
             <p>Intenta con otro término de búsqueda o crea un nuevo registro.</p>
           </div>
@@ -120,19 +124,19 @@
                 <div class="card-details">
                   @if (emp.documento) {
                     <div class="detail-row">
-                      <span class="detail-icon">🪪</span>
+                      <span class="detail-icon"><app-icon name="shield" [size]="14"></app-icon></span>
                       <span class="detail-text">C.C. {{ emp.documento }}</span>
                     </div>
                   }
                   @if (emp.telefono) {
                     <div class="detail-row">
-                      <span class="detail-icon">📱</span>
+                      <span class="detail-icon"><app-icon name="user" [size]="14"></app-icon></span>
                       <a href="tel:{{ emp.telefono }}" class="detail-link">{{ emp.telefono }}</a>
                     </div>
                   }
                   @if (emp.email) {
                     <div class="detail-row">
-                      <span class="detail-icon">✉️</span>
+                      <span class="detail-icon"><app-icon name="file-text" [size]="14"></app-icon></span>
                       <span class="detail-text">{{ emp.email }}</span>
                     </div>
                   }
@@ -149,10 +153,12 @@
                 <!-- Botones de Acción Táctiles (Mobile-First) -->
                 <div class="card-actions">
                   <button class="btn-touch-action btn-edit" (click)="openEditModal(emp)">
-                    ✏️ Editar
+                    <app-icon name="edit" [size]="13"></app-icon>
+                    <span>Editar</span>
                   </button>
                   <button class="btn-touch-action btn-role-change" (click)="openChangeRoleModal(emp)">
-                    🛡️ Cambiar Rol
+                    <app-icon name="shield" [size]="13"></app-icon>
+                    <span>Cambiar Rol</span>
                   </button>
                   <button 
                     class="btn-touch-action" 
@@ -185,7 +191,10 @@
               @for (log of auditLogs(); track log.id) {
                 <div class="audit-card">
                   <div class="audit-meta">
-                    <span class="audit-date">📅 {{ log.created_at | date:'medium' }}</span>
+                    <span class="audit-date">
+                      <app-icon name="calendar" [size]="13"></app-icon>
+                      <span>{{ log.created_at | date:'medium' }}</span>
+                    </span>
                     <span class="audit-actor">Asignado por: <strong>{{ log.assigned_by_username || 'Administración' }}</strong></span>
                   </div>
                   <div class="audit-body">
@@ -195,13 +204,16 @@
                     </div>
                     <div class="audit-change">
                       <span class="role-from">{{ log.previous_role }}</span>
-                      <span class="arrow-indicator">➔</span>
+                      <span class="arrow-indicator">
+                        <app-icon name="arrow-right" [size]="12"></app-icon>
+                      </span>
                       <span class="role-to" [ngClass]="getRoleBadge(log.new_role)">{{ getRoleName(log.new_role) }}</span>
                     </div>
                   </div>
                   @if (log.motivo) {
                     <div class="audit-reason">
-                      💬 <em>{{ log.motivo }}</em>
+                      <app-icon name="message-square" [size]="13"></app-icon>
+                      <em>{{ log.motivo }}</em>
                     </div>
                   }
                 </div>
@@ -220,7 +232,9 @@
     <div class="modal-drawer" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 class="modal-title">{{ isEditing() ? 'Editar Empleado' : 'Registrar Nuevo Empleado' }}</h2>
-        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+        <button class="modal-close-btn" (click)="closeModal()">
+          <app-icon name="x" [size]="14"></app-icon>
+        </button>
       </div>
 
       <div class="modal-body">
@@ -295,8 +309,10 @@
   <div class="modal-overlay" (click)="closeModal()">
     <div class="modal-drawer modal-compact" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">🛡️ Asignar Nuevo Rol</h2>
-        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+        <h2 class="modal-title">Asignar Nuevo Rol</h2>
+        <button class="modal-close-btn" (click)="closeModal()">
+          <app-icon name="x" [size]="14"></app-icon>
+        </button>
       </div>
 
       <div class="modal-body">

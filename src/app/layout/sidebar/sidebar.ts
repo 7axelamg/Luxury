@@ -5,11 +5,14 @@ import { Subscription, filter } from 'rxjs';
 import { AuthService } from '../../core/services/auth';
 import { RoleService } from '../../core/services/role.service';
 import { NotificationService, NotificationSummary } from '../../core/services/notification.service';
+import { cleanVehicleTitle } from '../../core/utils/vehicle-utils';
+
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css'
 })
@@ -45,6 +48,10 @@ export class Sidebar implements OnInit, OnDestroy {
         this.mobileOpen = false; 
         this.showPendingModal = false;
       });
+  }
+
+  cleanTitle(vehiculo: string, placa?: string): string {
+    return cleanVehicleTitle(vehiculo, placa);
   }
 
   ngOnDestroy(): void {
@@ -93,7 +100,7 @@ export class Sidebar implements OnInit, OnDestroy {
     switch (paso) {
       case 1: return '1. Checklist Ingreso';
       case 2: return '2. Cotización & Factura';
-      default: return '✓ Entregado y Cerrado';
+      default: return 'Entregado y Cerrado';
     }
   }
 

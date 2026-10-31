@@ -5,11 +5,14 @@ import { RouterModule } from '@angular/router';
 import { Sidebar } from '../../layout/sidebar/sidebar';
 import { OrderService, OrderDto } from '../../core/services/order';
 import { RoleService } from '../../core/services/role.service';
+import { cleanVehicleTitle } from '../../core/utils/vehicle-utils';
+
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, RouterModule, Sidebar, FormsModule],
+  imports: [CommonModule, RouterModule, Sidebar, FormsModule, IconComponent],
   templateUrl: './history.html',
   styleUrl: './history.css'
 })
@@ -99,10 +102,11 @@ export class History implements OnInit {
       result = result.filter(o => o.pasoActual < 6 && !o.estado.includes('Entregado') && !o.estado.includes('Cerrado'));
     }
 
-    // Filter by text search
+    // Filter by text search (incluyendo placa)
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
       result = result.filter(o =>
+        (o.placa && o.placa.toLowerCase().includes(term)) ||
         (o.vehiculo && o.vehiculo.toLowerCase().includes(term)) ||
         (o.cliente && o.cliente.toLowerCase().includes(term)) ||
         (o.id && o.id.toLowerCase().includes(term)) ||
@@ -115,6 +119,10 @@ export class History implements OnInit {
     return result.sort((a, b) =>
       new Date(b.fechaIngreso).getTime() - new Date(a.fechaIngreso).getTime()
     );
+  }
+
+  cleanTitle(vehiculo: string, placa?: string): string {
+    return cleanVehicleTitle(vehiculo, placa);
   }
 
   setFiltroEstado(f: 'TODOS' | 'ENTREGADOS' | 'EN_CURSO') {
@@ -150,7 +158,7 @@ export class History implements OnInit {
     switch (paso) {
       case 1: return '1. Checklist Ingreso';
       case 2: return '2. Cotización & Factura';
-      default: return '✓ Entregado y Cerrado';
+      default: return 'Entregado y Cerrado';
     }
   }
 

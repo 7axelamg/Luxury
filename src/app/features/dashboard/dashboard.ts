@@ -5,11 +5,14 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Sidebar } from '../../layout/sidebar/sidebar';
 import { OrderService, OrderDto } from '../../core/services/order';
 import { RoleService } from '../../core/services/role.service';
+import { cleanVehicleTitle } from '../../core/utils/vehicle-utils';
+
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, Sidebar, FormsModule],
+  imports: [CommonModule, RouterModule, Sidebar, FormsModule, IconComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -131,10 +134,11 @@ export class Dashboard implements OnInit {
       result = result.filter(o => !o.estado.includes('Entregado') && !o.estado.includes('Cerrado'));
     }
 
-    // 2. Búsqueda por texto
+    // 2. Búsqueda por texto (incluyendo placa)
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
       result = result.filter(order =>
+        (order.placa && order.placa.toLowerCase().includes(term)) ||
         (order.vehiculo && order.vehiculo.toLowerCase().includes(term)) ||
         (order.cliente && order.cliente.toLowerCase().includes(term)) ||
         (order.id && order.id.toLowerCase().includes(term)) ||
@@ -144,6 +148,10 @@ export class Dashboard implements OnInit {
     }
 
     return result;
+  }
+
+  cleanTitle(vehiculo: string, placa?: string): string {
+    return cleanVehicleTitle(vehiculo, placa);
   }
 
   setFilterScope(scope: 'MI_ETAPA' | 'TODOS'): void {
@@ -181,7 +189,7 @@ export class Dashboard implements OnInit {
     switch (paso) {
       case 1: return '1. Checklist Ingreso';
       case 2: return '2. Cotización & Factura';
-      default: return '✓ Entregado y Cerrado';
+      default: return 'Entregado y Cerrado';
     }
   }
 

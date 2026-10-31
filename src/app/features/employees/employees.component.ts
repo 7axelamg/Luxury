@@ -7,10 +7,12 @@ import { AuthService } from '../../core/services/auth';
 import { RoleService } from '../../core/services/role.service';
 import { Sidebar } from '../../layout/sidebar/sidebar';
 
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+
 @Component({
   selector: 'app-employees',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Sidebar],
+  imports: [CommonModule, FormsModule, RouterModule, Sidebar, IconComponent],
   templateUrl: './employees.component.html',
   styleUrls: ['./employees.component.css']
 })

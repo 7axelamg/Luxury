@@ -1,11 +1,14 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Sidebar } from '../../layout/sidebar/sidebar';
-import { OrderService, CreateOrderDto } from '../../core/services/order';
+import { OrderService, OrderDto, CreateOrderDto } from '../../core/services/order';
 import { NumbersOnlyDirective } from '../../core/directives/numbers-only.directive';
-import { UppercaseDirective } from '../../core/directives/uppercase.directive';
+import { PlateFormatDirective } from '../../core/directives/plate-format.directive';
+import { cleanVehicleTitle, formatPlateDisplay } from '../../core/utils/vehicle-utils';
+
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-reception',
@@ -16,16 +19,22 @@ import { UppercaseDirective } from '../../core/directives/uppercase.directive';
     RouterModule,
     Sidebar,
     NumbersOnlyDirective,
-    UppercaseDirective
+    PlateFormatDirective,
+    IconComponent
   ],
   templateUrl: './reception.html',
   styleUrl: './reception.css'
 })
-export class Reception {
+export class Reception implements OnInit {
   receptionForm: FormGroup;
   fotos: string[] = [];
   isLoading = false;
   errorMessage = '';
+
+  // Redundancia y prevención de duplicados
+  allOrders: OrderDto[] = [];
+  activeOrderConflict: OrderDto | null = null;
+  knownVehicleSuggestion: OrderDto | null = null;
   
   constructor(
     private fb: FormBuilder,
@@ -39,8 +48,8 @@ export class Reception {
       telefono: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
       documento: ['', [Validators.required, Validators.pattern(/^[0-9]{6,12}$/)]],
       
-      // Vehículo
-      placa: ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{5,6}$/)]],
+      // Vehículo: Formato de placa: 3 letras mayúsculas seguidas de números (máximo 6)
+      placa: ['', [Validators.required, Validators.pattern(/^[A-Z]{3}[0-9]{2,3}[A-Z]?$/)]],
       marca: ['', [Validators.required, Validators.minLength(2)]],
       modelo: ['', [Validators.required, Validators.minLength(2)]],
       color: ['', [Validators.required, Validators.minLength(3)]],
@@ -49,6 +58,75 @@ export class Reception {
       pertenencias: [''],
       observaciones: ['']
     });
+  }
+
+  ngOnInit(): void {
+    // Cargar órdenes existentes para validación de redundancia en placas
+    this.orderService.getAll().subscribe({
+      next: (orders) => {
+        this.allOrders = orders || [];
+        this.checkPlateRedundancy(this.receptionForm.get('placa')?.value);
+      },
+      error: (err) => console.warn('No se pudieron precargar órdenes para validación de placa:', err)
+    });
+
+    // Escuchar cambios en la placa para prevenir redundancias y duplicados en tiempo real
+    this.receptionForm.get('placa')?.valueChanges.subscribe((val: string) => {
+      this.checkPlateRedundancy(val);
+    });
+  }
+
+  checkPlateRedundancy(val: string | null | undefined): void {
+    const clean = (val || '').trim().toUpperCase();
+    if (!clean || clean.length < 5) {
+      this.activeOrderConflict = null;
+      this.knownVehicleSuggestion = null;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // 1. Detectar si ya existe una orden activa en proceso para esta placa (evitar orden duplicada redundante)
+    const active = this.allOrders.find(
+      o => o.placa?.toUpperCase() === clean && o.pasoActual < 6
+    );
+    this.activeOrderConflict = active || null;
+
+    // 2. Si no hay conflicto activo, revisar si estuvo previamente para sugerir autocompletar
+    if (!this.activeOrderConflict) {
+      const past = this.allOrders.find(o => o.placa?.toUpperCase() === clean);
+      this.knownVehicleSuggestion = past || null;
+    } else {
+      this.knownVehicleSuggestion = null;
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  useKnownVehicleData(order: OrderDto): void {
+    const cleanedTitle = cleanVehicleTitle(order.vehiculo, order.placa);
+    // Intenta extraer marca y modelo del texto existente si están combinados
+    const parts = cleanedTitle.split(' ');
+    const suggestedMarca = parts[0] || '';
+    const suggestedModelo = parts.slice(1).join(' ') || '';
+
+    this.receptionForm.patchValue({
+      nombreCliente: order.cliente || this.receptionForm.get('nombreCliente')?.value,
+      telefono: order.telefono || this.receptionForm.get('telefono')?.value,
+      documento: order.documento || this.receptionForm.get('documento')?.value,
+      marca: suggestedMarca || this.receptionForm.get('marca')?.value,
+      modelo: suggestedModelo || this.receptionForm.get('modelo')?.value,
+    });
+
+    this.knownVehicleSuggestion = null;
+    this.cdr.markForCheck();
+  }
+
+  cleanTitle(vehiculo: string, placa?: string): string {
+    return cleanVehicleTitle(vehiculo, placa);
+  }
+
+  formatPlate(placa?: string): string {
+    return formatPlateDisplay(placa);
   }
 
   isFieldInvalid(fieldName: string): boolean {
@@ -65,7 +143,7 @@ export class Reception {
       return `Debe tener al menos ${control.errors['minlength'].requiredLength} caracteres.`;
     }
     if (control.errors['pattern']) {
-      if (fieldName === 'placa') return 'La placa debe tener 5 o 6 caracteres alfanuméricos sin símbolos ni espacios (Ej: ABC123).';
+      if (fieldName === 'placa') return 'Formato requerido: 3 letras mayúsculas seguidas de números (Ej: ABC123 o ABC12D).';
       if (fieldName === 'telefono') return 'El teléfono debe contener exactamente 10 dígitos numéricos (Ej: 3001234567).';
       if (fieldName === 'documento') return 'El documento debe contener entre 6 y 12 dígitos numéricos.';
     }
@@ -103,11 +181,13 @@ export class Reception {
     this.errorMessage = '';
 
     const formValue = this.receptionForm.value;
+    const cleanPlaca = formValue.placa.trim().toUpperCase();
+
     const dto: CreateOrderDto = {
       nombreCliente: formValue.nombreCliente.trim(),
       telefono: formValue.telefono.trim(),
       documento: formValue.documento.trim(),
-      placa: formValue.placa.trim().toUpperCase(),
+      placa: cleanPlaca,
       marca: formValue.marca.trim(),
       modelo: formValue.modelo.trim(),
       color: formValue.color.trim(),
@@ -121,7 +201,7 @@ export class Reception {
     this.orderService.create(dto).subscribe({
       next: (order) => {
         this.isLoading = false;
-        alert(`✅ Orden ${order.id} creada exitosamente`);
+        alert(`Orden ${order.id} creada exitosamente para la placa ${cleanPlaca}`);
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

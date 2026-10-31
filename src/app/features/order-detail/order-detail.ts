@@ -6,11 +6,14 @@ import { Sidebar } from '../../layout/sidebar/sidebar';
 import { ChecklistItem } from '../../core/models/models';
 import { OrderService, OrderDto, ActionHistoryDto } from '../../core/services/order';
 import { RoleService } from '../../core/services/role.service';
+import { cleanVehicleTitle } from '../../core/utils/vehicle-utils';
+
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-order-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, Sidebar, FormsModule],
+  imports: [CommonModule, RouterModule, Sidebar, FormsModule, IconComponent],
   templateUrl: './order-detail.html',
   styleUrl: './order-detail.css'
 })
@@ -40,146 +43,103 @@ export class OrderDetail implements OnInit {
     fechaFirma: ''
   };
 
-  // ─── Checklist Oficial de Vehículos (6 Categorías - Imagen de Referencia) ──
-  vehicleChecklist: { id: string; categoria: string; item: string; estado: 'B/SI' | 'M/NO' | 'N/A'; observacion: string }[] = [
-    // 1. ACCESORIOS DE SEGURIDAD
-    { id: 'c1', categoria: 'ACCESORIOS DE SEGURIDAD', item: 'EXTINTOR', estado: 'B/SI', observacion: '' },
-    { id: 'c2', categoria: 'ACCESORIOS DE SEGURIDAD', item: 'BOTIQUIN', estado: 'B/SI', observacion: '' },
-    { id: 'c3', categoria: 'ACCESORIOS DE SEGURIDAD', item: 'CONOS DE SEGURIDAD', estado: 'B/SI', observacion: '' },
-
-    // 2. CORROSION
-    { id: 'c4', categoria: 'CORROSION', item: 'PROTECCION ANTICORROSIVA', estado: 'B/SI', observacion: '' },
-    { id: 'c5', categoria: 'CORROSION', item: 'LAVADO A VAPOR', estado: 'B/SI', observacion: '' },
-    { id: 'c6', categoria: 'CORROSION', item: 'HIDROBLASTING', estado: 'B/SI', observacion: '' },
-
-    // 3. ESTADO DE LLANTAS
-    { id: 'c7', categoria: 'ESTADO DE LLANTAS', item: 'LLANTA DELANTERA IZQ.', estado: 'B/SI', observacion: '' },
-    { id: 'c8', categoria: 'ESTADO DE LLANTAS', item: 'LLANTA DELANTERA DER.', estado: 'B/SI', observacion: '' },
-    { id: 'c9', categoria: 'ESTADO DE LLANTAS', item: 'LLANTA TRASERA IZQ.', estado: 'B/SI', observacion: '' },
-    { id: 'c10', categoria: 'ESTADO DE LLANTAS', item: 'LLANTA TRASERA DER.', estado: 'B/SI', observacion: '' },
-    { id: 'c11', categoria: 'ESTADO DE LLANTAS', item: 'LLANTA DE REPUESTO', estado: 'B/SI', observacion: '' },
-
-    // 4. ACEITES Y FILTROS
-    { id: 'c12', categoria: 'ACEITES Y FILTROS', item: 'ACEITE', estado: 'B/SI', observacion: '' },
-    { id: 'c13', categoria: 'ACEITES Y FILTROS', item: 'FILTRO DE COMBUSTION', estado: 'B/SI', observacion: '' },
-    { id: 'c14', categoria: 'ACEITES Y FILTROS', item: 'FILTRO DE AIRE ACONDICIONADO', estado: 'B/SI', observacion: '' },
-    { id: 'c15', categoria: 'ACEITES Y FILTROS', item: 'FILTRO DE ACEITE', estado: 'B/SI', observacion: '' },
-
-    // 5. FRENOS
-    { id: 'c16', categoria: 'FRENOS', item: 'NIVEL DE LIQUIDO DE FRENOS', estado: 'B/SI', observacion: '' },
-    { id: 'c17', categoria: 'FRENOS', item: 'NIVEL DE REFRIGERANTE', estado: 'B/SI', observacion: '' },
-
-    // 6. OTROS
-    { id: 'c18', categoria: 'OTROS', item: 'CABLE DE INICIACION', estado: 'B/SI', observacion: '' },
-    { id: 'c19', categoria: 'OTROS', item: 'PLUMILLAS DELANTERAS', estado: 'B/SI', observacion: '' },
-    { id: 'c20', categoria: 'OTROS', item: 'PLUMILLAS TRASERAS', estado: 'B/SI', observacion: '' },
-    { id: 'c21', categoria: 'OTROS', item: 'GATOS HIDRAULICOS', estado: 'B/SI', observacion: '' }
+  // ─── Checklist de 9 Ítems (Sistema Sobrio, Sin Emojis) ────────────────────
+  vehicleChecklist: {
+    id: string;
+    item: string;
+    icono: string;
+    estado: 'BIEN' | 'PROXIMO' | 'COTIZAR';
+    kmProximo: number | null;
+    observacion: string;
+    servicioId?: string | null;
+  }[] = [
+    { id: 'c1', item: 'Aceite de Motor', icono: 'droplet', estado: 'BIEN', kmProximo: 2000, observacion: '', servicioId: 's1' },
+    { id: 'c2', item: 'Líquido Refrigerante', icono: 'thermometer', estado: 'BIEN', kmProximo: 5000, observacion: '', servicioId: 's_refrig' },
+    { id: 'c3', item: 'Líquido de Transmisión', icono: 'refresh-cw', estado: 'BIEN', kmProximo: 5000, observacion: '', servicioId: 's3' },
+    { id: 'c4', item: 'Líquido de Frenos', icono: 'disc', estado: 'BIEN', kmProximo: 5000, observacion: '', servicioId: 's7' },
+    { id: 'c5', item: 'Filtros de Aire', icono: 'wind', estado: 'BIEN', kmProximo: 2000, observacion: '', servicioId: 's4' },
+    { id: 'c6', item: 'Pastillas', icono: 'disc', estado: 'BIEN', kmProximo: 3000, observacion: '', servicioId: 's8' },
+    { id: 'c7', item: 'Llantas', icono: 'circle', estado: 'BIEN', kmProximo: 5000, observacion: '', servicioId: 's16' },
+    { id: 'c8', item: 'Plumillas', icono: 'wiper', estado: 'BIEN', kmProximo: 2000, observacion: '', servicioId: 's14' },
+    { id: 'c9', item: 'Extintor', icono: 'flame', estado: 'BIEN', kmProximo: null, observacion: '', servicioId: 's15' }
   ];
 
-  get checklistCategories(): string[] {
-    const cats: string[] = [];
-    this.vehicleChecklist.forEach(i => {
-      if (!cats.includes(i.categoria)) cats.push(i.categoria);
-    });
-    return cats;
-  }
-
-  getItemsByCategory(cat: string) {
-    return this.vehicleChecklist.filter(i => i.categoria === cat);
-  }
-
-  setChecklistState(item: any, state: 'B/SI' | 'M/NO' | 'N/A') {
+  setChecklistState(item: any, state: 'BIEN' | 'PROXIMO' | 'COTIZAR') {
     item.estado = state;
-  }
-
-  marcarTodosChecklist(state: 'B/SI' | 'M/NO' | 'N/A') {
-    this.vehicleChecklist.forEach(i => i.estado = state);
+    if (state === 'COTIZAR' && item.servicioId) {
+      const match = this.servicesCotizacionList.find(s => s.id === item.servicioId);
+      if (match) match.seleccionado = true;
+    }
     this.saveDraft();
   }
 
-  marcarCategoria(categoria: string, state: 'B/SI' | 'M/NO' | 'N/A') {
+  setKmProximo(item: any, offsetKm: number) {
+    item.kmProximo = offsetKm;
+    item.estado = 'PROXIMO';
+    this.saveDraft();
+  }
+
+  getEstimadoKm(offset: number | null | undefined): number {
+    const base = Number(this.order?.kilometraje) || 0;
+    return base + (Number(offset) || 0);
+  }
+
+  marcarTodosChecklist(state: 'BIEN' | 'PROXIMO' | 'COTIZAR') {
+    this.vehicleChecklist.forEach(i => i.estado = state);
+    if (state === 'COTIZAR') {
+      this.vehicleChecklist.forEach(i => {
+        if (i.servicioId) {
+          const match = this.servicesCotizacionList.find(s => s.id === i.servicioId);
+          if (match) match.seleccionado = true;
+        }
+      });
+    }
+    this.saveDraft();
+  }
+
+  sincronizarHallazgosConCotizacion() {
     this.vehicleChecklist.forEach(i => {
-      if (i.categoria === categoria) i.estado = state;
+      if ((i.estado === 'COTIZAR' || (i as any).estado === 'CAMBIO_YA' || (i as any).estado === 'M/NO') && i.servicioId) {
+        const match = this.servicesCotizacionList.find(s => s.id === i.servicioId);
+        if (match) match.seleccionado = true;
+      }
     });
     this.saveDraft();
+    this.setTab('cotizacion');
+  }
+
+  getServicioNombre(servicioId?: string | null): string {
+    if (!servicioId) return '';
+    const s = this.servicesCotizacionList.find(item => item.id === servicioId);
+    return s ? `${s.nombre} ($${s.precio.toLocaleString()} COP)` : '';
   }
 
   get checklistSummary() {
     const total = this.vehicleChecklist.length;
-    const buenos = this.vehicleChecklist.filter(i => i.estado === 'B/SI').length;
-    const malos = this.vehicleChecklist.filter(i => i.estado === 'M/NO').length;
-    const na = this.vehicleChecklist.filter(i => i.estado === 'N/A').length;
-    return { total, buenos, malos, na };
+    const bien = this.vehicleChecklist.filter(i => i.estado === 'BIEN' || (i as any).estado === 'OPTIMO' || (i as any).estado === 'B/SI').length;
+    const proximos = this.vehicleChecklist.filter(i => i.estado === 'PROXIMO').length;
+    const cotizar = this.vehicleChecklist.filter(i => i.estado === 'COTIZAR' || (i as any).estado === 'CAMBIO_YA' || (i as any).estado === 'M/NO').length;
+    return {
+      total,
+      bien,
+      proximos,
+      cotizar,
+      buenos: bien,
+      malos: cotizar,
+      optimos: bien,
+      cambioYa: cotizar,
+      na: 0
+    };
   }
 
-  // ─── Mobile Carousel State para Checklist (Paso 1) ───────────────────────
+  // ─── Local Draft Storage ──────────────────────────────────────────────────
   carouselIndex: number = 0;
-  carouselAnimationDirection: 'next' | 'prev' = 'next';
-  touchStartX: number = 0;
-  touchEndX: number = 0;
-
-  get currentCategory(): string {
-    return this.checklistCategories[this.carouselIndex] || '';
-  }
-
-  get isCarouselSummary(): boolean {
-    return this.carouselIndex >= this.checklistCategories.length;
-  }
-
-  get carouselProgressPercent(): number {
-    const total = this.checklistCategories.length;
-    if (this.carouselIndex >= total) return 100;
-    return Math.round(((this.carouselIndex + 1) / (total + 1)) * 100);
-  }
-
-  nextCarouselStep() {
-    if (this.carouselIndex <= this.checklistCategories.length) {
-      this.carouselAnimationDirection = 'next';
-      this.carouselIndex++;
-      this.saveDraft();
-    }
-  }
-
-  prevCarouselStep() {
-    if (this.carouselIndex > 0) {
-      this.carouselAnimationDirection = 'prev';
-      this.carouselIndex--;
-      this.saveDraft();
-    }
-  }
-
-  goToCarouselStep(index: number) {
-    this.carouselAnimationDirection = index > this.carouselIndex ? 'next' : 'prev';
-    this.carouselIndex = index;
-    this.saveDraft();
-  }
-
-  onTouchStart(e: TouchEvent) {
-    this.touchStartX = e.changedTouches[0].screenX;
-  }
-
-  onTouchEnd(e: TouchEvent) {
-    this.touchEndX = e.changedTouches[0].screenX;
-    this.handleSwipe();
-  }
-
-  private handleSwipe() {
-    const diff = this.touchEndX - this.touchStartX;
-    if (Math.abs(diff) > 60) {
-      if (diff < 0) {
-        this.nextCarouselStep();
-      } else {
-        this.prevCarouselStep();
-      }
-    }
-  }
 
   saveDraft() {
     if (!this.orderId) return;
     try {
       const draft = {
         checklist: this.vehicleChecklist,
-        carouselIndex: this.carouselIndex,
         cotizacionServices: this.servicesCotizacionList,
         incluirIva: this.incluirIva,
         descuento: this.descuentoFactura,
@@ -196,10 +156,17 @@ export class OrderDetail implements OnInit {
       if (raw) {
         const draft = JSON.parse(raw);
         if (draft.checklist && Array.isArray(draft.checklist)) {
-          this.vehicleChecklist = draft.checklist;
-        }
-        if (typeof draft.carouselIndex === 'number') {
-          this.carouselIndex = Math.min(draft.carouselIndex, this.checklistCategories.length);
+          draft.checklist.forEach((oldItem: any) => {
+            const current = this.vehicleChecklist.find(c => c.id === oldItem.id || c.item.toLowerCase() === (oldItem.item || '').toLowerCase());
+            if (current) {
+              if (oldItem.estado === 'B/SI' || oldItem.estado === 'OPTIMO' || oldItem.estado === 'BIEN') current.estado = 'BIEN';
+              else if (oldItem.estado === 'M/NO' || oldItem.estado === 'CAMBIO_YA' || oldItem.estado === 'COTIZAR') current.estado = 'COTIZAR';
+              else if (oldItem.estado === 'PROXIMO') current.estado = 'PROXIMO';
+              else current.estado = 'BIEN';
+              if (oldItem.kmProximo !== undefined) current.kmProximo = oldItem.kmProximo;
+              current.observacion = oldItem.observacion || '';
+            }
+          });
         }
         if (draft.cotizacionServices && Array.isArray(draft.cotizacionServices)) {
           this.servicesCotizacionList = draft.cotizacionServices;
@@ -232,6 +199,7 @@ export class OrderDetail implements OnInit {
     // 1. LUBRICACIÓN Y ACEITES
     { id: 's1', categoria: 'LUBRICACIÓN Y ACEITES', nombre: 'Cambio de Aceite 100% Sintético (Motul 5W30)', precio: 380000, cantidad: 1, seleccionado: true },
     { id: 's2', categoria: 'LUBRICACIÓN Y ACEITES', nombre: 'Filtro de Aceite de Alto Rendimiento', precio: 95000, cantidad: 1, seleccionado: true },
+    { id: 's_refrig', categoria: 'LUBRICACIÓN Y ACEITES', nombre: 'Líquido Refrigerante Larga Duración (Galón 50/50)', precio: 120000, cantidad: 1, seleccionado: false },
     { id: 's3', categoria: 'LUBRICACIÓN Y ACEITES', nombre: 'Servicio de Fluido Transmisión / Caja', precio: 280000, cantidad: 1, seleccionado: false },
 
     // 2. FILTROS Y AIRE
@@ -319,18 +287,23 @@ export class OrderDetail implements OnInit {
     window.print();
   }
 
+  cleanTitle(vehiculo: string | null | undefined, placa?: string | null): string {
+    return cleanVehicleTitle(vehiculo, placa);
+  }
+
   descargarFacturaPDF() {
     window.print();
   }
 
   enviarFacturaWhatsApp() {
     if (!this.order) return;
-    const msg = `Hola *${this.order.cliente}*, le compartimos su Factura de Servicio en *Luxury Service Car Home* para su vehículo *${this.order.vehiculo}* (${this.order.placa}):\n\n` +
-      `📄 *Factura:* #FAC-${this.order.id}\n` +
-      `💰 *Subtotal:* $${this.subtotalFactura.toLocaleString()} COP\n` +
-      `🏛️ *IVA (19%):* $${this.ivaFactura.toLocaleString()} COP\n` +
-      `💳 *TOTAL:* $${this.totalFactura.toLocaleString()} COP\n` +
-      `💵 *Forma de Pago:* ${this.formaPagoFactura}\n\n` +
+    const vehiculoLimpio = this.cleanTitle(this.order.vehiculo, this.order.placa);
+    const msg = `Hola *${this.order.cliente}*, le compartimos su Factura de Servicio en *Luxury Service Car Home* para su vehículo *${vehiculoLimpio}* (Placa: ${this.order.placa}):\n\n` +
+      `*Factura:* #FAC-${this.order.id}\n` +
+      `*Subtotal:* $${this.subtotalFactura.toLocaleString()} COP\n` +
+      `*IVA (19%):* $${this.ivaFactura.toLocaleString()} COP\n` +
+      `*TOTAL:* $${this.totalFactura.toLocaleString()} COP\n` +
+      `*Forma de Pago:* ${this.formaPagoFactura}\n\n` +
       `¡Muchas gracias por su confianza!`;
     const phoneClean = (this.order.telefono || '').replace(/\D/g, '');
     const url = `https://wa.me/${phoneClean}?text=${encodeURIComponent(msg)}`;
@@ -503,12 +476,12 @@ export class OrderDetail implements OnInit {
   }
 
   getHistoryActionIcon(accion: string): string {
-    if (!accion) return '🟢';
-    if (accion.includes('Ingresó')) return '📥';
-    if (accion.includes('Checklist') || accion.includes('Recepción')) return '📋';
-    if (accion.includes('Factura') || accion.includes('Cotización')) return '🧾';
-    if (accion.includes('Entrega') || accion.includes('Cerró')) return '🏁';
-    return '🟢';
+    if (!accion) return 'circle';
+    if (accion.includes('Ingresó')) return 'inbox';
+    if (accion.includes('Checklist') || accion.includes('Recepción')) return 'clipboard';
+    if (accion.includes('Factura') || accion.includes('Cotización')) return 'file-text';
+    if (accion.includes('Entrega') || accion.includes('Cerró')) return 'check';
+    return 'circle';
   }
 
   getEtapaLabel(etapa: number): string {

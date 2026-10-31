@@ -9,7 +9,9 @@
       <h3>Luxury Services</h3>
       <span>Vehicle Management</span>
     </div>
-    <button class="sidebar-close-btn" (click)="closeOverlay()">✕</button>
+    <button class="sidebar-close-btn" (click)="closeOverlay()" aria-label="Cerrar menú">
+      <app-icon name="x" [size]="16"></app-icon>
+    </button>
   </div>
 
   <!-- Pending Work Notification Card (only when there are pending items) -->
@@ -18,12 +20,16 @@
          (click)="togglePendingModal()" 
          title="Haz clic para ver la lista de trabajos por revisar">
       <div class="notif-card-inner">
-        <div class="notif-icon">🔔</div>
+        <div class="notif-icon">
+          <app-icon name="bell" [size]="16"></app-icon>
+        </div>
         <div class="notif-body">
           <span class="notif-label">{{ notifications.label }}</span>
           <span class="notif-sub">{{ notifications.myStepCount }} pendiente{{ notifications.myStepCount > 1 ? 's' : '' }} • Toca para ver lista</span>
         </div>
-        <div class="notif-arrow">❯</div>
+        <div class="notif-arrow">
+          <app-icon name="chevron-right" [size]="14"></app-icon>
+        </div>
       </div>
     </div>
   }
@@ -35,10 +41,20 @@
          routerLinkActive="active"
          class="nav-item">
         <span class="nav-icon">
-          {{ item.icon === 'dashboard' ? '📊'
-           : item.icon === 'add_circle' ? '➕'
-           : item.icon === 'history' ? '🕒'
-           : '⚙️' }}
+          @switch (item.icon) {
+            @case ('dashboard') {
+              <app-icon name="clipboard" [size]="16"></app-icon>
+            }
+            @case ('add_circle') {
+              <app-icon name="plus" [size]="16"></app-icon>
+            }
+            @case ('history') {
+              <app-icon name="clock" [size]="16"></app-icon>
+            }
+            @default {
+              <app-icon name="settings" [size]="16"></app-icon>
+            }
+          }
         </span>
         <span class="nav-label">{{ item.label }}</span>
         @if (item.badge) {
@@ -56,13 +72,13 @@
         <div class="user-details">
           <span class="user-name">{{ currentUser.username }}</span>
           <span class="user-role" [ngClass]="getRoleBadge(currentUser.role).class">
-            {{ getRoleBadge(currentUser.role).icon }} {{ getRoleBadge(currentUser.role).label }}
+            {{ getRoleBadge(currentUser.role).label }}
           </span>
         </div>
       </div>
     }
     <button class="logout-btn" (click)="logout()">
-      <span>🚪</span>
+      <app-icon name="arrow-right" [size]="14"></app-icon>
       <span>Cerrar Sesión</span>
     </button>
   </div>
@@ -81,7 +97,9 @@
           <h3 class="pending-modal-title">Trabajos por Revisar</h3>
           <p class="pending-modal-role">Órdenes asignadas a tu área: <strong>{{ roleTitle }}</strong></p>
         </div>
-        <button class="pending-close-btn" (click)="closePendingModal()" title="Cerrar ventana">✕</button>
+        <button class="pending-close-btn" (click)="closePendingModal()" title="Cerrar ventana">
+          <app-icon name="x" [size]="14"></app-icon>
+        </button>
       </div>
 
       <div class="pending-orders-container">
@@ -89,13 +107,16 @@
           <div class="pending-order-card" (click)="openOrder(order.id)">
             <div class="pending-card-top">
               @if (order.placa) {
-                <span class="pending-plate-badge">{{ order.placa }}</span>
+                <span class="card-plate-badge">{{ order.placa }}</span>
               }
               <span class="pending-step-tag">{{ getPasoLabel(order.pasoActual) }}</span>
             </div>
-            <div class="pending-vehicle-title">{{ order.vehiculo }}</div>
+            <div class="pending-vehicle-title">{{ cleanTitle(order.vehiculo, order.placa) }}</div>
             <div class="pending-meta-row">
-              <span class="pending-client-name">👤 {{ order.cliente }}</span>
+              <span class="pending-client-name">
+                <app-icon name="user" [size]="13"></app-icon>
+                <span>{{ order.cliente }}</span>
+              </span>
               <span class="pending-order-code">{{ order.id }}</span>
             </div>
             @if (order.observaciones) {
@@ -104,7 +125,8 @@
             <div class="pending-card-footer">
               <span class="pending-urgency-dot">● Requiere atención</span>
               <button class="btn-review-now" (click)="openOrder(order.id); $event.stopPropagation()">
-                Revisar Orden →
+                <span>Revisar Orden</span>
+                <app-icon name="arrow-right" [size]="13"></app-icon>
               </button>
             </div>
           </div>
@@ -112,7 +134,7 @@
 
         @if (notifications.myPendingOrders.length === 0) {
           <div class="pending-empty-state">
-            <div class="empty-icon">🎉</div>
+            <div class="empty-icon"><app-icon name="check" [size]="32"></app-icon></div>
             <h4>¡Estás al día!</h4>
             <p>No tienes vehículos o trabajos pendientes de revisión en tu etapa en este momento.</p>
           </div>
@@ -121,10 +143,10 @@
 
       <div class="pending-modal-footer">
         <button class="btn-all-dashboard" (click)="viewInDashboard()">
-          📊 Ver todas en el Tablero de Órdenes
+          <app-icon name="clipboard" [size]="14"></app-icon>
+          <span>Ver todas en el Tablero de Órdenes</span>
         </button>
       </div>
     </div>
   </div>
 }
-

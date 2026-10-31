@@ -8,19 +8,24 @@
         <div class="mobile-logo">LS</div>
         <span class="mobile-brand-name">Luxury Services</span>
       </div>
-      <button class="hamburger-btn" (click)="sidebar.toggleMobile()">&#9776;</button>
+      <button class="hamburger-btn" (click)="sidebar.toggleMobile()" aria-label="Abrir menú">
+        <app-icon name="menu" [size]="18"></app-icon>
+      </button>
     </div>
 
     <div class="page-wrapper">
 
       <header class="page-header">
-        <div>
-          <h1 class="page-title">Nueva Recepción</h1>
-          <p class="text-muted">Registro de cliente y vehículo al ingreso</p>
+        <div class="page-header-info">
+          <div class="page-badge-category">RECEPCIÓN DE VEHÍCULOS</div>
+          <h1 class="page-title">Nueva Recepción de Ingreso</h1>
+          <p class="text-muted">Registro oficial de ingreso a taller, cliente y datos del vehículo</p>
         </div>
-        <button class="btn btn-outline" routerLink="/dashboard">
-          Cancelar
-        </button>
+        <div class="page-header-actions">
+          <button class="btn btn-outline" routerLink="/dashboard">
+            Cancelar
+          </button>
+        </div>
       </header>
 
       <form [formGroup]="receptionForm" (ngSubmit)="onSubmit()" class="reception-form" novalidate>
@@ -29,8 +34,11 @@
           <!-- Datos del Cliente -->
           <div class="glass-panel section-panel">
             <div class="section-panel-header">
-              <span class="panel-icon">👤</span>
-              <h3 class="section-title">Datos del Propietario / Cliente</h3>
+              <span class="panel-icon"><app-icon name="user" [size]="16"></app-icon></span>
+              <div>
+                <h3 class="section-title">Datos del Propietario / Cliente</h3>
+                <span class="section-subtitle">Información de contacto y facturación</span>
+              </div>
             </div>
             
             <div class="form-group" [class.has-error]="isFieldInvalid('nombreCliente')">
@@ -77,22 +85,59 @@
           <!-- Datos del Vehículo -->
           <div class="glass-panel section-panel">
             <div class="section-panel-header">
-              <span class="panel-icon">🏎️</span>
-              <h3 class="section-title">Datos del Vehículo</h3>
+              <span class="panel-icon"><app-icon name="car" [size]="16"></app-icon></span>
+              <div>
+                <h3 class="section-title">Datos del Vehículo</h3>
+                <span class="section-subtitle">Registro de placa sin redundancia y especificaciones</span>
+              </div>
             </div>
 
             <div class="form-row">
+              <!-- Campo Placa con validación inteligente -->
               <div class="form-group half" [class.has-error]="isFieldInvalid('placa')">
-                <label class="form-label">Placa (Máx 6 alfanuméricos) *</label>
-                <input 
-                  type="text" 
-                  appUppercase
-                  maxlength="6"
-                  formControlName="placa" 
-                  class="form-control font-mono font-bold text-uppercase" 
-                  placeholder="ABC123">
+                <div class="label-with-preview">
+                  <label class="form-label">Placa *</label>
+                  @if (receptionForm.get('placa')?.value) {
+                    <span class="card-plate-badge animate-pop">{{ receptionForm.get('placa')?.value }}</span>
+                  }
+                </div>
+                <div class="plate-input-container">
+                  <input 
+                    type="text" 
+                    appPlateFormat
+                    maxlength="6"
+                    formControlName="placa" 
+                    class="form-control plate-input font-mono font-bold" 
+                    placeholder="ABC123">
+                </div>
+                <span class="field-hint">3 letras mayúsculas seguidas de números (Ej: ABC123)</span>
+
                 @if (isFieldInvalid('placa')) {
                   <span class="field-error-msg">{{ getFieldError('placa') }}</span>
+                }
+
+                <!-- Alerta de Redundancia -->
+                @if (activeOrderConflict) {
+                  <div class="plate-redundancy-alert">
+                    <span class="alert-icon"><app-icon name="alert-circle" [size]="14"></app-icon></span>
+                    <div class="alert-body">
+                      <strong>Vehículo con Orden Activa: {{ activeOrderConflict.id }}</strong>
+                      <p>Este vehículo ya se encuentra en taller en Etapa {{ activeOrderConflict.pasoActual }}. Verifique para no generar duplicados.</p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Sugerencia para autocompletar si es cliente recurrente -->
+                @if (knownVehicleSuggestion && !activeOrderConflict) {
+                  <div class="plate-autofill-suggestion">
+                    <div class="sugg-text">
+                      <span class="sugg-icon"><app-icon name="check" [size]="13"></app-icon></span>
+                      <span>Registrado: <strong>{{ cleanTitle(knownVehicleSuggestion.vehiculo, knownVehicleSuggestion.placa) }}</strong></span>
+                    </div>
+                    <button type="button" class="btn-autofill" (click)="useKnownVehicleData(knownVehicleSuggestion)">
+                      Autocompletar
+                    </button>
+                  </div>
                 }
               </div>
 
@@ -128,8 +173,11 @@
         <!-- Evidencias y Detalles -->
         <div class="glass-panel section-panel mt-4">
           <div class="section-panel-header">
-            <span class="panel-icon">📋</span>
-            <h3 class="section-title">Pertenencias e Inspección Fotográfica</h3>
+            <span class="panel-icon"><app-icon name="clipboard" [size]="16"></app-icon></span>
+            <div>
+              <h3 class="section-title">Pertenencias e Inspección Fotográfica</h3>
+              <span class="section-subtitle">Inventario de pertenencias y registro fotográfico inicial</span>
+            </div>
           </div>
           
           <div class="form-row">
@@ -149,12 +197,15 @@
               @for (foto of fotos; track $index) {
                 <div class="photo-preview">
                   <img [src]="foto" alt="Evidencia">
-                  <button type="button" class="remove-photo-btn" (click)="removeFoto($index)" title="Eliminar foto">✕</button>
+                  <button type="button" class="remove-photo-btn" (click)="removeFoto($index)" title="Eliminar foto">
+                    <app-icon name="x" [size]="12"></app-icon>
+                  </button>
                 </div>
               }
               @if (fotos.length < 5) {
                 <div class="photo-upload-btn" (click)="fileInput.click()">
-                  <span>📷 + Añadir Fotografía</span>
+                  <span class="upload-icon"><app-icon name="camera" [size]="18"></app-icon></span>
+                  <span class="upload-text">+ Añadir Foto</span>
                   <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" multiple hidden>
                 </div>
               }
@@ -164,16 +215,22 @@
 
         @if (errorMessage) {
           <div class="reception-error mt-3">
-            ⚠️ {{ errorMessage }}
+            <app-icon name="alert-circle" [size]="14"></app-icon>
+            <span>{{ errorMessage }}</span>
           </div>
         }
 
         <div class="form-actions mt-4">
+          <button type="button" class="btn btn-outline" routerLink="/dashboard">
+            Cancelar
+          </button>
           <button type="submit" class="btn btn-primary btn-large btn-full-mobile" [disabled]="receptionForm.invalid || isLoading">
             @if (isLoading) {
-              <span class="spinner"></span> Registrando Recepción...
+              <span class="spinner"></span>
+              <span>Registrando Recepción...</span>
             } @else {
-              ✓ Confirmar Recepción e Iniciar Orden
+              <app-icon name="check" [size]="14"></app-icon>
+              <span>Confirmar Recepción e Iniciar Orden</span>
             }
           </button>
         </div>

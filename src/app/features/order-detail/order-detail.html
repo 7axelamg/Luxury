@@ -8,7 +8,9 @@
         <div class="mobile-logo">LS</div>
         <span class="mobile-brand-name">Luxury Services</span>
       </div>
-      <button class="hamburger-btn" (click)="sidebar.toggleMobile()">&#9776;</button>
+      <button class="hamburger-btn" (click)="sidebar.toggleMobile()" aria-label="Abrir menú">
+        <app-icon name="menu" [size]="18"></app-icon>
+      </button>
     </div>
 
     <div class="page-wrapper">
@@ -22,8 +24,11 @@
 
       @if (errorMessage) {
         <div class="error-state glass-panel">
-          <p>⚠️ {{ errorMessage }}</p>
-          <button class="btn btn-primary" routerLink="/dashboard">← Volver al Tablero</button>
+          <div class="inline-flex items-center gap-2 text-semantic-critical">
+            <app-icon name="alert-circle" [size]="18"></app-icon>
+            <p class="m-0">{{ errorMessage }}</p>
+          </div>
+          <button class="btn btn-primary mt-3" routerLink="/dashboard">Volver al Tablero</button>
         </div>
       }
 
@@ -36,23 +41,22 @@
               <div class="header-tags">
                 <span class="order-id-badge">ORDEN #{{ order.id }}</span>
                 @if (order.placa) {
-                  <span class="plate-badge">🚘 {{ order.placa }}</span>
+                  <span class="card-plate-badge">{{ order.placa }}</span>
                 }
                 <span class="badge-status-corporate">{{ order.estado }}</span>
-
               </div>
-              <h1 class="page-title">{{ order.vehiculo }}</h1>
+              <h1 class="page-title">{{ cleanTitle(order.vehiculo, order.placa) }}</h1>
               <p class="text-muted mb-0">Propietario: <strong>{{ order.cliente }}</strong></p>
-              <!-- CAMBIO 4: Trazabilidad en Cabecera de la orden -->
+              
               <div class="order-trace-header-meta">
                 <span class="trace-header-pill">
-                  <span class="trace-pill-icon">📥</span>
+                  <span class="trace-pill-icon"><app-icon name="inbox" [size]="13"></app-icon></span>
                   <span class="trace-pill-label">Recibido por:</span>
                   <strong class="trace-pill-val">{{ order.recepcionista || 'Alejandro Gómez' }}</strong>
                 </span>
                 <span class="trace-header-sep">•</span>
                 <span class="trace-header-pill">
-                  <span class="trace-pill-icon">⏱️</span>
+                  <span class="trace-pill-icon"><app-icon name="clock" [size]="13"></app-icon></span>
                   <span class="trace-pill-label">Asignado actual (Etapa {{ order.pasoActual }}):</span>
                   <strong class="trace-pill-val">{{ getAsignadoActual() }}</strong>
                 </span>
@@ -62,7 +66,8 @@
             @if (isSuperAdmin()) {
               <div class="admin-manual-actions">
                 <button type="button" class="btn btn-outline admin-tools-toggle" (click)="toggleAdminStepSelector()">
-                  ⚙️ Cambiar Etapa (Admin)
+                  <app-icon name="settings" [size]="14"></app-icon>
+                  <span>Cambiar Etapa (Admin)</span>
                 </button>
                 @if (showAdminStepSelector) {
                   <div class="admin-dropdown-menu">
@@ -74,8 +79,9 @@
                       </button>
                     }
                     <button type="button" class="admin-step-option close-option"
-                      (click)="saltarAPaso(6); toggleAdminStepSelector()">
-                      🏁 Marcar como Entregado y Cerrar Orden
+                      (click)="saltarAPaso(3); toggleAdminStepSelector()">
+                      <app-icon name="check" [size]="14"></app-icon>
+                      <span>Marcar como Entregado y Cerrar Orden</span>
                     </button>
                   </div>
                 }
@@ -86,7 +92,7 @@
           <!-- Navegador único de etapas -->
           <nav class="single-workflow-nav mt-3">
             <button type="button" class="workflow-nav-item" [class.active-tab]="activeTab === 'resumen'" (click)="setTab('resumen')">
-              <div class="nav-step-icon">📋</div>
+              <div class="nav-step-icon"><app-icon name="clipboard" [size]="14"></app-icon></div>
               <div class="nav-step-labels">
                 <span class="nav-step-title">Resumen</span>
                 <span class="nav-step-status">Ficha de ingreso</span>
@@ -99,8 +105,11 @@
                 [class.completed-order-step]="order.pasoActual > paso.id"
                 (click)="setTab(paso.key)">
                 <div class="nav-step-icon">
-                  @if (order.pasoActual > paso.id) { <span class="check-mark">✓</span> }
-                  @else { <span>{{ paso.id }}</span> }
+                  @if (order.pasoActual > paso.id) {
+                    <app-icon name="check" [size]="14"></app-icon>
+                  } @else {
+                    <span>{{ paso.id }}</span>
+                  }
                 </div>
                 <div class="nav-step-labels">
                   <span class="nav-step-title">{{ paso.nombreCorto }}</span>
@@ -112,11 +121,10 @@
                 </div>
               </button>
             }
-            <!-- CAMBIO 3: Pestaña Historial -->
             <button type="button" class="workflow-nav-item"
               [class.active-tab]="activeTab === 'historial'"
               (click)="setTab('historial')">
-              <div class="nav-step-icon">📜</div>
+              <div class="nav-step-icon"><app-icon name="file-text" [size]="14"></app-icon></div>
               <div class="nav-step-labels">
                 <span class="nav-step-title">Historial</span>
                 <span class="nav-step-status">Trazabilidad ({{ history.length }})</span>
@@ -150,13 +158,19 @@
               </div>
             </div>
             <div class="photos-evidence-block mt-4">
-              <h4 class="subsection-title">📷 Fotografías de Evidencia del Ingreso</h4>
+              <h4 class="subsection-title">
+                <app-icon name="camera" [size]="16"></app-icon>
+                <span>Fotografías de Evidencia del Ingreso</span>
+              </h4>
               @if (order.fotos && order.fotos.length > 0) {
                 <div class="evidence-photos-grid">
                   @for (foto of order.fotos; track $index) {
                     <div class="evidence-photo-card" (click)="selectedPhoto = foto">
                       <img [src]="foto" alt="Evidencia vehículo">
-                      <span class="photo-zoom-hint">🔍 Ampliar Foto {{ $index + 1 }}</span>
+                      <span class="photo-zoom-hint">
+                        <app-icon name="search" [size]="12"></app-icon>
+                        <span>Ampliar Foto {{ $index + 1 }}</span>
+                      </span>
                     </div>
                   }
                 </div>
@@ -168,206 +182,161 @@
         }
 
         <!-- ═══════════════════════════════════════════════════
-             TAB: ETAPA 1 — Revisión Exterior
-             ═══════════════════════════════════════════════════ -->
-        <!-- ═══════════════════════════════════════════════════
-             TAB: PASO 1 — RECEPCIÓN & CHECKLIST (CARRUSEL PASO A PASO)
+             TAB: PASO 1 — CHECKLIST DE 9 PUNTOS
+             Sober, white cards, 1.5px stroke outline icons
              ═══════════════════════════════════════════════════ -->
         @if (activeTab === 'checklist') {
-          <div class="tab-content glass-panel carousel-step-container"
-               (touchstart)="onTouchStart($event)" 
-               (touchend)="onTouchEnd($event)">
+          <div class="tab-content glass-panel fast-mobile-checklist-container">
             
-            <!-- Barra Superior del Carrusel -->
-            <div class="carousel-stepper-header">
-              <div class="stepper-progress-info">
-                <div class="stepper-badge">
-                  @if (!isCarouselSummary) {
-                    <span>Paso {{ carouselIndex + 1 }} de {{ checklistCategories.length }}</span>
-                  } @else {
-                    <span>Validación y Resumen Final</span>
-                  }
-                </div>
-                <h3 class="stepper-category-title">
-                  {{ !isCarouselSummary ? currentCategory : 'Inspección de Ingreso Completada' }}
-                </h3>
-              </div>
-
-              <div class="stepper-stats">
-                <span class="stat-pill success-pill">🟢 {{ checklistSummary.buenos }}</span>
-                <span class="stat-pill danger-pill">🔴 {{ checklistSummary.malos }}</span>
-                <span class="stat-pill neutral-pill">⚪ {{ checklistSummary.na }}</span>
-              </div>
-            </div>
-
-            <!-- Barra de Progreso Visual -->
-            <div class="carousel-progress-track">
-              <div class="carousel-progress-fill" [style.width.%]="carouselProgressPercent"></div>
-            </div>
-
-            <!-- Chips de navegación rápida -->
-            <div class="carousel-steps-chips">
-              @for (cat of checklistCategories; track cat; let i = $index) {
-                <button type="button" 
-                  class="step-chip-btn" 
-                  [class.active]="carouselIndex === i"
-                  [class.completed]="carouselIndex > i"
-                  (click)="goToCarouselStep(i)">
-                  <span class="step-chip-num">{{ i + 1 }}</span>
-                  <span class="step-chip-name">{{ cat }}</span>
-                </button>
-              }
-              <button type="button" 
-                class="step-chip-btn" 
-                [class.active]="isCarouselSummary"
-                (click)="goToCarouselStep(checklistCategories.length)">
-                <span class="step-chip-num">✓</span>
-                <span class="step-chip-name">Resumen</span>
-              </button>
-            </div>
-
-            <!-- CARD ACTIVA INDIVIDUAL -->
-            @if (!isCarouselSummary) {
-              <div class="carousel-active-card glass-panel-sm">
-                <div class="card-category-banner">
-                  <div>
-                    <h4 class="cat-banner-title">📂 {{ currentCategory }}</h4>
-                    <span class="cat-banner-subtitle">{{ getItemsByCategory(currentCategory).length }} puntos de control táctiles</span>
-                  </div>
-                  @if (puedeGestionarPaso(1)) {
-                    <div class="quick-card-buttons">
-                      <button type="button" class="btn-quick-tag btn-quick-good" (click)="marcarCategoria(currentCategory, 'B/SI')">
-                        ⚡ Todo Bueno/Sí
-                      </button>
-                      <button type="button" class="btn-quick-tag btn-quick-na" (click)="marcarCategoria(currentCategory, 'N/A')">
-                        ⚪ Todo N/A
-                      </button>
-                    </div>
-                  }
-                </div>
-
-                <div class="carousel-items-list">
-                  @for (item of getItemsByCategory(currentCategory); track item.id) {
-                    <div class="touch-checklist-card" [class.touch-item-bad]="item.estado === 'M/NO'">
-                      <div class="touch-item-header">
-                        <span class="touch-item-label">{{ item.item }}</span>
-                      </div>
-
-                      <div class="touch-btn-trio">
-                        <button type="button" class="touch-btn-option btn-opt-bsi"
-                          [class.selected]="item.estado === 'B/SI'"
-                          [disabled]="!puedeGestionarPaso(1)"
-                          (click)="setChecklistState(item, 'B/SI'); saveDraft()">
-                          <span class="opt-icon">🟢</span>
-                          <span class="opt-text">Bueno / Sí</span>
-                        </button>
-                        <button type="button" class="touch-btn-option btn-opt-mno"
-                          [class.selected]="item.estado === 'M/NO'"
-                          [disabled]="!puedeGestionarPaso(1)"
-                          (click)="setChecklistState(item, 'M/NO'); saveDraft()">
-                          <span class="opt-icon">🔴</span>
-                          <span class="opt-text">Malo / No</span>
-                        </button>
-                        <button type="button" class="touch-btn-option btn-opt-na"
-                          [class.selected]="item.estado === 'N/A'"
-                          [disabled]="!puedeGestionarPaso(1)"
-                          (click)="setChecklistState(item, 'N/A'); saveDraft()">
-                          <span class="opt-icon">⚪</span>
-                          <span class="opt-text">N / A</span>
-                        </button>
-                      </div>
-
-                      @if (item.estado === 'M/NO') {
-                        <div class="touch-observation-box">
-                          <input type="text" class="touch-obs-input"
-                            [(ngModel)]="item.observacion"
-                            (ngModelChange)="saveDraft()"
-                            placeholder="⚠️ Especifique el detalle o daño observado..."
-                            [disabled]="!puedeGestionarPaso(1)">
-                        </div>
-                      }
-                    </div>
-                  }
+            <!-- Barra Superior Móvil: Kilometraje y Acción Rápida -->
+            <div class="mobile-check-header">
+              <div class="mobile-km-badge">
+                <span class="mobile-km-icon">
+                  <app-icon name="gauge" [size]="16"></app-icon>
+                </span>
+                <div class="mobile-km-text">
+                  <span class="mobile-km-label">Kilometraje actual</span>
+                  <strong class="mobile-km-val">{{ (order.kilometraje || 0) | number }} km</strong>
                 </div>
               </div>
-            } @else {
-              <!-- RESUMEN FINAL DEL CHECKLIST -->
-              <div class="carousel-summary-card glass-panel-sm">
-                <div class="summary-hero">
-                  <div class="summary-check-icon">✓</div>
-                  <h4 class="summary-title">Inspección de Ingreso Completada</h4>
-                  <p class="summary-sub">Todos los {{ checklistSummary.total }} puntos de control han sido verificados.</p>
-                </div>
 
-                <div class="summary-stats-grid">
-                  <div class="stat-box good-box">
-                    <span class="stat-num">{{ checklistSummary.buenos }}</span>
-                    <span class="stat-label">En Buen Estado</span>
-                  </div>
-                  <div class="stat-box bad-box">
-                    <span class="stat-num">{{ checklistSummary.malos }}</span>
-                    <span class="stat-label">Con Novedad</span>
-                  </div>
-                  <div class="stat-box na-box">
-                    <span class="stat-num">{{ checklistSummary.na }}</span>
-                    <span class="stat-label">No Aplica</span>
-                  </div>
-                </div>
-
-                @if (checklistSummary.malos > 0) {
-                  <div class="hallazgos-detected-box mt-3">
-                    <h5 class="hallazgos-title">⚠️ Puntos con novedad registrada:</h5>
-                    <ul class="hallazgos-list">
-                      @for (item of vehicleChecklist; track item.id) {
-                        @if (item.estado === 'M/NO') {
-                          <li>
-                            <strong>{{ item.item }}</strong> ({{ item.categoria }}): 
-                            <span>{{ item.observacion || 'Sin observación adicional' }}</span>
-                          </li>
-                        }
-                      }
-                    </ul>
-                  </div>
-                }
-
+              <div class="mobile-header-actions">
                 @if (puedeGestionarPaso(1)) {
-                  <div class="summary-action-box mt-4">
-                    <button class="btn btn-primary btn-large" (click)="avanzarPaso()" [disabled]="isAdvancing">
-                      @if (isAdvancing) { <span class="spinner"></span> Avanzando... } @else { Avanzar a Cotización & Factura → }
+                  <button type="button" class="btn-quick-all-green" (click)="marcarTodosChecklist('BIEN')">
+                    <app-icon name="check" [size]="14"></app-icon>
+                    <span>Todo en Buen Estado</span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Resumen Contador Sobrio -->
+            <div class="mobile-stats-row">
+              <span class="stat-badge stat-green">
+                <span class="stat-indicator-dot dot-ok"></span>
+                <span>{{ checklistSummary.bien }} Bien</span>
+              </span>
+              <span class="stat-badge stat-yellow">
+                <span class="stat-indicator-dot dot-attention"></span>
+                <span>{{ checklistSummary.proximos }} Próximos</span>
+              </span>
+              <span class="stat-badge stat-red">
+                <span class="stat-indicator-dot dot-critical"></span>
+                <span>{{ checklistSummary.cotizar }} Por Cotizar</span>
+              </span>
+            </div>
+
+            <!-- Lista de los 9 Ítems: Tarjetas Blancas con Borde Gris -->
+            <div class="mobile-items-flow">
+              @for (item of vehicleChecklist; track item.id; let i = $index) {
+                <div class="mobile-item-card"
+                     [class.card-is-cotizar]="item.estado === 'COTIZAR'"
+                     [class.card-is-proximo]="item.estado === 'PROXIMO'"
+                     [class.card-is-bien]="item.estado === 'BIEN'">
+                  
+                  <div class="item-card-header">
+                    <div class="item-title-wrap">
+                      <span class="item-num-badge">{{ i + 1 }}</span>
+                      <span class="item-icon-wrap">
+                        <app-icon [name]="item.icono" [size]="16"></app-icon>
+                      </span>
+                      <strong class="item-name">{{ item.item }}</strong>
+                    </div>
+                    @if (item.estado === 'COTIZAR') {
+                      <span class="tag-auto-quote">
+                        <app-icon name="alert-circle" [size]="12"></app-icon>
+                        <span>Se añade a Cotización</span>
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Botones Táctiles para Móvil -->
+                  <div class="item-touch-trio">
+                    <button type="button" 
+                      class="touch-pill pill-bien" 
+                      [class.active]="item.estado === 'BIEN'"
+                      [disabled]="!puedeGestionarPaso(1)"
+                      (click)="setChecklistState(item, 'BIEN')">
+                      <span class="touch-pill-dot dot-ok"></span>
+                      <span>Bien</span>
+                    </button>
+
+                    <button type="button" 
+                      class="touch-pill pill-proximo" 
+                      [class.active]="item.estado === 'PROXIMO'"
+                      [disabled]="!puedeGestionarPaso(1)"
+                      (click)="setChecklistState(item, 'PROXIMO')">
+                      <span class="touch-pill-dot dot-attention"></span>
+                      <span>Próximo</span>
+                    </button>
+
+                    <button type="button" 
+                      class="touch-pill pill-cotizar" 
+                      [class.active]="item.estado === 'COTIZAR'"
+                      [disabled]="!puedeGestionarPaso(1)"
+                      (click)="setChecklistState(item, 'COTIZAR')">
+                      <span class="touch-pill-dot dot-critical"></span>
+                      <span>Cotizar</span>
                     </button>
                   </div>
-                }
-              </div>
-            }
 
-            <!-- BARRA DE NAVEGACIÓN FIJA INFERIOR (STICKY BOTTOM MOBILE-FIRST) -->
-            <div class="sticky-mobile-bottom-bar">
-              <button type="button" class="btn-sticky btn-prev" 
-                [disabled]="carouselIndex === 0" 
-                (click)="prevCarouselStep()">
-                ← Anterior
-              </button>
+                  <!-- Despliegue Rápido de Próximo Cambio -->
+                  @if (item.estado === 'PROXIMO') {
+                    <div class="inline-km-picker">
+                      <span class="picker-question">¿En cuántos km se sugiere cambiar?</span>
+                      <div class="picker-presets">
+                        <button type="button" class="preset-btn" [class.selected]="item.kmProximo === 1000" (click)="setKmProximo(item, 1000)">+1.000 km</button>
+                        <button type="button" class="preset-btn" [class.selected]="item.kmProximo === 2000" (click)="setKmProximo(item, 2000)">+2.000 km</button>
+                        <button type="button" class="preset-btn" [class.selected]="item.kmProximo === 3000" (click)="setKmProximo(item, 3000)">+3.000 km</button>
+                        <button type="button" class="preset-btn" [class.selected]="item.kmProximo === 5000" (click)="setKmProximo(item, 5000)">+5.000 km</button>
+                      </div>
+                      <div class="picker-result">
+                        <app-icon name="calendar" [size]="13"></app-icon>
+                        <span>Próximo cambio estimado a los: <strong>{{ getEstimadoKm(item.kmProximo || 2000) | number }} KM</strong></span>
+                      </div>
+                    </div>
+                  }
 
-              <div class="stepper-dots-indicator">
-                @for (cat of checklistCategories; track cat; let i = $index) {
-                  <span class="step-dot" [class.active-dot]="carouselIndex === i" (click)="goToCarouselStep(i)"></span>
-                }
-                <span class="step-dot" [class.active-dot]="isCarouselSummary" (click)="goToCarouselStep(checklistCategories.length)"></span>
-              </div>
+                  <!-- Despliegue de Cotización Inmediata -->
+                  @if (item.estado === 'COTIZAR') {
+                    <div class="inline-cotizar-notice">
+                      <div class="cotizar-notice-text">
+                        <app-icon name="file-text" [size]="13"></app-icon>
+                        <span>Vinculado a Cotización & Factura</span>
+                        @if (item.servicioId) {
+                          <small>({{ getServicioNombre(item.servicioId) }})</small>
+                        }
+                      </div>
+                      <input type="text" class="mobile-obs-field" 
+                        [(ngModel)]="item.observacion" 
+                        (ngModelChange)="saveDraft()"
+                        placeholder="Detalle o daño (ej: desgaste 80%, fuga, vencido)...">
+                    </div>
+                  }
 
-              @if (!isCarouselSummary) {
-                <button type="button" class="btn-sticky btn-next" (click)="nextCarouselStep()">
-                  {{ carouselIndex === checklistCategories.length - 1 ? 'Ver Resumen →' : 'Siguiente →' }}
-                </button>
-              } @else {
-                <button type="button" class="btn-sticky btn-finish" [disabled]="isAdvancing || !puedeGestionarPaso(1)" (click)="avanzarPaso()">
-                  Avanzar Etapa →
+                </div>
+              }
+            </div>
+
+            <!-- Botón de Cierre y Avance a Cotización -->
+            <div class="mobile-checklist-footer">
+              @if (checklistSummary.cotizar > 0) {
+                <div class="mobile-alert-banner">
+                  <app-icon name="alert-circle" [size]="16"></app-icon>
+                  <span><strong>{{ checklistSummary.cotizar }}</strong> ítems detectados para cotización y factura</span>
+                </div>
+              }
+              @if (puedeGestionarPaso(1)) {
+                <button type="button" class="btn-continue-cotizacion" (click)="sincronizarHallazgosConCotizacion()">
+                  <span>Avanzar a Cotización & Factura (Paso 2)</span>
+                  <app-icon name="arrow-right" [size]="15"></app-icon>
                 </button>
               }
             </div>
 
           </div>
         }
+
         <!-- ═══════════════════════════════════════════════════
              TAB: PASO 2 — COTIZACIÓN CHECKLIST & FACTURACIÓN DIGITAL INSTANTÁNEA
              ═══════════════════════════════════════════════════ -->
@@ -376,19 +345,25 @@
             
             <div class="cotizacion-billing-header mb-4">
               <div>
-                <h3 class="section-title mb-1">🧾 Cotización Checklist & Facturación Digital</h3>
+                <h3 class="section-title mb-1">
+                  <app-icon name="file-text" [size]="18"></app-icon>
+                  <span>Cotización Checklist & Facturación Digital</span>
+                </h3>
                 <p class="text-muted mb-0">Seleccione los servicios/repuestos requeridos y la factura se generará automáticamente en tiempo real.</p>
               </div>
 
               <div class="cotizacion-header-actions">
                 <button type="button" class="btn btn-outline btn-sm" (click)="showAddCustomServiceForm = !showAddCustomServiceForm">
-                  + Agregar Servicio / Repuesto
+                  <app-icon name="plus" [size]="13"></app-icon>
+                  <span>Agregar Servicio / Repuesto</span>
                 </button>
                 <button type="button" class="btn btn-outline btn-sm" (click)="marcarTodosCotizacion(true)">
-                  ✓ Seleccionar Todos
+                  <app-icon name="check" [size]="13"></app-icon>
+                  <span>Seleccionar Todos</span>
                 </button>
                 <button type="button" class="btn btn-outline btn-sm" (click)="marcarTodosCotizacion(false)">
-                  ✕ Limpiar Selección
+                  <app-icon name="x" [size]="13"></app-icon>
+                  <span>Limpiar Selección</span>
                 </button>
               </div>
             </div>
@@ -396,7 +371,7 @@
             <!-- Formulario de Servicio Personalizado -->
             @if (showAddCustomServiceForm) {
               <div class="add-custom-service-box glass-panel-sm mb-4">
-                <h4 style="margin: 0 0 0.85rem 0; font-size: 0.95rem; font-weight: 800; color: #1E293B;">+ Añadir Servicio o Repuesto a la Cotización</h4>
+                <h4 style="margin: 0 0 0.85rem 0; font-size: 0.95rem; font-weight: 600; color: #111111;">Añadir Servicio o Repuesto a la Cotización</h4>
                 <div class="custom-service-form-grid">
                   <div class="form-group">
                     <label class="form-label-sm">Nombre del servicio / producto</label>
@@ -428,7 +403,7 @@
               </div>
             }
 
-            <!-- GRID PRINCIPAL DE 2 COLUMNAS: CHECKLIST DE COTIZACIÓN + VISTA PREVIA DE FACTURA -->
+            <!-- GRID PRINCIPAL DE 2 COLUMNAS -->
             <div class="cotizacion-billing-grid">
               
               <!-- COLUMNA IZQUIERDA: CHECKLIST DE SERVICIOS Y PRECIOS -->
@@ -445,7 +420,9 @@
                       </button>
                     }
                   </div>
-                  <input type="text" class="form-control form-control-sm search-cot-input mt-2" [(ngModel)]="cotizacionSearch" placeholder="🔍 Buscar servicio o repuesto...">
+                  <div class="search-wrap mt-2">
+                    <input type="text" class="form-control form-control-sm search-cot-input" [(ngModel)]="cotizacionSearch" placeholder="Buscar servicio o repuesto...">
+                  </div>
                 </div>
 
                 <div class="cotizacion-checklist-card glass-panel-sm">
@@ -510,115 +487,93 @@
                     </div>
                     <div class="client-info-col text-right">
                       <span class="info-label">DATOS DEL VEHÍCULO:</span>
-                      <strong class="info-name">{{ order.vehiculo }}</strong>
+                      <strong class="info-name">{{ cleanTitle(order.vehiculo, order.placa) }}</strong>
                       <span class="info-meta">Placa: <strong style="color: #C8102E;">{{ order.placa }}</strong></span>
                       <span class="info-meta">Kilometraje: {{ order.kilometraje | number }} km</span>
                     </div>
                   </div>
 
-                  <!-- TABLA DE ÍTEMS EN LA FACTURA -->
-                  <div class="invoice-table-container mb-3">
-                    <table class="invoice-table">
-                      <thead>
+                  <!-- TABLA DE DETALLE DE LA FACTURA -->
+                  <table class="invoice-table">
+                    <thead>
+                      <tr>
+                        <th>DESCRIPCIÓN DEL SERVICIO / REPUESTO</th>
+                        <th class="text-center">CANT</th>
+                        <th class="text-right">VALOR UNIT.</th>
+                        <th class="text-right">TOTAL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of selectedCotizacionItems; track item.id) {
                         <tr>
-                          <th>Ítem / Descripción del Servicio</th>
-                          <th style="text-align: center; width: 60px;">Cant.</th>
-                          <th style="text-align: right; width: 110px;">P. Unitario</th>
-                          <th style="text-align: right; width: 120px;">Subtotal</th>
+                          <td>
+                            <strong>{{ item.nombre }}</strong>
+                            <span class="invoice-item-cat">{{ item.categoria }}</span>
+                          </td>
+                          <td class="text-center">{{ item.cantidad }}</td>
+                          <td class="text-right">${{ item.precio | number }}</td>
+                          <td class="text-right"><strong>${{ (item.precio * item.cantidad) | number }}</strong></td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        @for (item of selectedCotizacionItems; track item.id) {
-                          <tr>
-                            <td>
-                              <strong>{{ item.nombre }}</strong>
-                              <span class="item-cat-subtext">{{ item.categoria }}</span>
-                            </td>
-                            <td style="text-align: center;">{{ item.cantidad }}</td>
-                            <td style="text-align: right;">${{ item.precio | number }}</td>
-                            <td style="text-align: right; font-weight: 700;">${{ (item.precio * item.cantidad) | number }}</td>
-                          </tr>
-                        }
-                        @if (selectedCotizacionItems.length === 0) {
-                          <tr>
-                            <td colspan="4" class="empty-invoice-text">Selecciona ítems del checklist para armar la factura.</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                      }
+                      @if (selectedCotizacionItems.length === 0) {
+                        <tr>
+                          <td colspan="4" class="text-center invoice-empty-row">
+                            Seleccione al menos un servicio o repuesto en la columna izquierda para generar la factura.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
 
-                  <!-- TOTALES Y DESGLOSE -->
-                  <div class="invoice-totals-box">
-                    <div class="totals-row">
-                      <span>Subtotal Servicios & Repuestos:</span>
-                      <strong>${{ subtotalFactura | number }} COP</strong>
-                    </div>
-
-                    <div class="totals-row">
-                      <label class="iva-toggle-label no-print">
-                        <input type="checkbox" [(ngModel)]="incluirIva" (ngModelChange)="saveDraft()">
-                        <span>Aplicar IVA (19%):</span>
-                      </label>
-                      <span class="print-only-label">Impuesto al Valor Agregado (IVA 19%):</span>
-                      <span>${{ ivaFactura | number }} COP</span>
-                    </div>
-
-                    <div class="totals-row discount-row">
-                      <span>Descuento Comercial:</span>
-                      <div class="discount-input-wrap no-print">
-                        <span>-$</span>
-                        <input type="number" class="discount-input" [(ngModel)]="descuentoFactura" (ngModelChange)="saveDraft()" placeholder="0">
-                      </div>
-                      <span class="print-only-discount">-${{ (descuentoFactura || 0) | number }} COP</span>
-                    </div>
-
-                    <div class="totals-row grand-total-row mt-2">
-                      <span>TOTAL A PAGAR:</span>
-                      <strong class="grand-total-val">${{ totalFactura | number }} COP</strong>
-                    </div>
-                  </div>
-
-                  <!-- FORMA DE PAGO -->
-                  <div class="invoice-payment-selector mt-3">
-                    <span class="info-label">Forma de Pago:</span>
-                    <div class="no-print">
-                      <select class="form-control select-dark select-sm" [(ngModel)]="formaPagoFactura" [disabled]="!puedeGestionarPaso(2)">
-                        <option value="Contado / Transferencia Nequi-Bancolombia">Contado / Transferencia Nequi-Bancolombia</option>
+                  <!-- TOTALES Y LIQUIDACIÓN -->
+                  <div class="invoice-totals-section">
+                    <div class="invoice-payment-method">
+                      <label class="payment-method-label">Forma de Pago:</label>
+                      <select class="form-control form-control-sm payment-select" [(ngModel)]="formaPagoFactura">
+                        <option value="Transferencia Bancaria / PSE">Transferencia Bancaria / PSE</option>
                         <option value="Tarjeta de Crédito / Débito">Tarjeta de Crédito / Débito</option>
                         <option value="Efectivo en Caja">Efectivo en Caja</option>
-                        <option value="Pago Contra Entrega">Pago Contra Entrega</option>
+                        <option value="Crédito Corporativo (30 días)">Crédito Corporativo (30 días)</option>
                       </select>
                     </div>
-                    <div class="print-only-payment">
-                      <strong>{{ formaPagoFactura }}</strong>
+
+                    <div class="invoice-summary-box">
+                      <div class="summary-line">
+                        <span>SUBTOTAL:</span>
+                        <strong>${{ subtotalFactura | number }} COP</strong>
+                      </div>
+                      <div class="summary-line">
+                        <span>IVA (19%):</span>
+                        <strong>${{ ivaFactura | number }} COP</strong>
+                      </div>
+                      <div class="summary-line total-grand">
+                        <span>TOTAL A PAGAR:</span>
+                        <strong class="total-grand-price">${{ totalFactura | number }} COP</strong>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- PIE DE PÁGINA IMPRESO (TÉRMINOS Y FIRMAS) -->
-                  <div class="invoice-print-footer">
-                    <div class="warranty-clause">
-                      <p><strong>Términos & Garantía:</strong> Luxury Service certifica que todos los repuestos, lubricantes y mano de obra aplicados cumplen con especificaciones de fabricante. Los trabajos mecánicos y detallados gozan de 30 días de garantía o 1,000 km.</p>
+                  <!-- FIRMAS Y PIE DE PÁGINA -->
+                  <div class="invoice-signatures-row mt-4">
+                    <div class="sig-box">
+                      <div class="sig-line"></div>
+                      <span>Firma Asesor / Gerencia</span>
                     </div>
-                    <div class="signatures-row">
-                      <div class="sig-box">
-                        <div class="sig-line"></div>
-                        <span>Firma Asesor / Gerencia</span>
-                      </div>
-                      <div class="sig-box">
-                        <div class="sig-line"></div>
-                        <span>Firma Cliente / Recibí Conforme</span>
-                      </div>
+                    <div class="sig-box">
+                      <div class="sig-line"></div>
+                      <span>Firma Cliente / Recibí Conforme</span>
                     </div>
                   </div>
 
                   <!-- BOTONES DE IMPRESIÓN Y ACCIONES MOBILE-FIRST -->
                   <div class="invoice-actions-row mt-3 no-print">
                     <button type="button" class="btn btn-outline btn-sm btn-print" (click)="imprimirFactura()">
-                      🖨️ Imprimir / PDF
+                      <app-icon name="printer" [size]="14"></app-icon>
+                      <span>Imprimir / PDF</span>
                     </button>
                     <button type="button" class="btn btn-outline btn-sm btn-wsp" (click)="enviarFacturaWhatsApp()">
-                      💬 Enviar WhatsApp
+                      <app-icon name="message-square" [size]="14"></app-icon>
+                      <span>Enviar WhatsApp</span>
                     </button>
                   </div>
 
@@ -631,15 +586,27 @@
             <!-- ACCIÓN FINAL DE CIERRE Y ENTREGA -->
             @if (puedeGestionarPaso(2)) {
               <div class="action-footer mt-4">
-                <p class="role-action-note">✓ <strong>Acción de Facturación:</strong> Al confirmar el pago y la emisión de factura, la orden pasará al estado final de <strong>Entregado y Cerrado</strong>.</p>
+                <p class="role-action-note">
+                  <app-icon name="check" [size]="14"></app-icon>
+                  <strong>Acción de Facturación:</strong> Al confirmar el pago y la emisión de factura, la orden pasará al estado final de <strong>Entregado y Cerrado</strong>.
+                </p>
                 <button class="btn btn-primary btn-large" (click)="avanzarPaso()" [disabled]="isAdvancing">
-                  @if (isAdvancing) { <span class="spinner"></span> Procesando Factura... } @else { 🏆 Confirmar Pago, Emitir Factura y Cerrar Orden → }
+                  @if (isAdvancing) {
+                    <span class="spinner"></span>
+                    <span>Procesando Factura...</span>
+                  } @else {
+                    <span>Confirmar Pago, Emitir Factura y Cerrar Orden</span>
+                    <app-icon name="arrow-right" [size]="15"></app-icon>
+                  }
                 </button>
               </div>
             }
             @if (!puedeGestionarPaso(2) && order.pasoActual === 2) {
               <div class="action-footer locked mt-4">
-                <p class="warning-text">🔒 <strong>Etapa Reservada:</strong> Solo <strong>Gerente Comercial</strong>, <strong>Administrador</strong> o personal autorizado pueden procesar la factura final.</p>
+                <p class="warning-text">
+                  <app-icon name="lock" [size]="14"></app-icon>
+                  <strong>Etapa Reservada:</strong> Solo <strong>Gerente Comercial</strong>, <strong>Administrador</strong> o personal autorizado pueden procesar la factura final.
+                </p>
               </div>
             }
 
@@ -647,14 +614,16 @@
         }
 
         <!-- ═══════════════════════════════════════════════════
-             TAB: HISTORIAL DE RESPONSABLES Y ACCIONES (CAMBIO 3)
+             TAB: HISTORIAL DE RESPONSABLES Y ACCIONES
              ═══════════════════════════════════════════════════ -->
         @if (activeTab === 'historial') {
           <div class="tab-content glass-panel">
             <div class="history-tab-header">
               <div class="history-header-info">
                 <div class="history-title-row">
-                  <span class="history-header-icon">📜</span>
+                  <span class="history-header-icon">
+                    <app-icon name="file-text" [size]="18"></app-icon>
+                  </span>
                   <h3 class="section-title mb-0">Trazabilidad de Responsables y Acciones</h3>
                 </div>
                 <p class="history-subtitle">
@@ -671,7 +640,8 @@
             <!-- Resumen de Responsables Directos por Etapa -->
             <div class="stage-responsibles-panel mb-4">
               <div class="stage-resp-panel-title">
-                <span>⚡ Responsables Asignados y Cierre por Etapa</span>
+                <app-icon name="shield" [size]="16"></app-icon>
+                <span>Responsables Asignados y Cierre por Etapa</span>
               </div>
               <div class="stage-responsibles-grid">
                 <div class="stage-resp-card" [class.resp-completed]="order.responsableEtapa1">
@@ -681,7 +651,10 @@
                   </div>
                   <div class="stage-resp-body">
                     @if (order.responsableEtapa1) {
-                      <strong class="stage-resp-name">✓ {{ order.responsableEtapa1 }}</strong>
+                      <strong class="stage-resp-name">
+                        <app-icon name="check" [size]="13"></app-icon>
+                        {{ order.responsableEtapa1 }}
+                      </strong>
                       <span class="stage-resp-date">{{ order.fechaEtapa1 | date:'dd/MM/yyyy HH:mm' }}</span>
                     } @else {
                       <span class="stage-resp-pending">Pendiente de cierre</span>
@@ -696,7 +669,10 @@
                   </div>
                   <div class="stage-resp-body">
                     @if (order.responsableEtapa2) {
-                      <strong class="stage-resp-name">✓ {{ order.responsableEtapa2 }}</strong>
+                      <strong class="stage-resp-name">
+                        <app-icon name="check" [size]="13"></app-icon>
+                        {{ order.responsableEtapa2 }}
+                      </strong>
                       <span class="stage-resp-date">{{ order.fechaEtapa2 | date:'dd/MM/yyyy HH:mm' }}</span>
                     } @else {
                       <span class="stage-resp-pending">Pendiente de cierre</span>
@@ -709,7 +685,8 @@
             <!-- Línea de Tiempo (Timeline) -->
             <div class="timeline-container">
               <div class="timeline-section-header">
-                <span class="timeline-section-title">⏱️ Línea de Tiempo de Eventos</span>
+                <app-icon name="clock" [size]="16"></app-icon>
+                <span class="timeline-section-title">Línea de Tiempo de Eventos</span>
                 <span class="timeline-section-hint">Orden cronológico de ejecución</span>
               </div>
 
@@ -722,7 +699,9 @@
 
               @if (!historyLoading && history.length === 0) {
                 <div class="empty-history-state">
-                  <span class="empty-history-icon">📜</span>
+                  <span class="empty-history-icon">
+                    <app-icon name="file-text" [size]="28"></app-icon>
+                  </span>
                   <h4>Sin eventos registrados</h4>
                   <p>Las acciones automáticas de esta orden comenzarán a registrarse a medida que avance por las etapas.</p>
                 </div>
@@ -733,7 +712,9 @@
                   @for (item of history; track item.id; let isLast = $last) {
                     <div class="timeline-entry" [class.timeline-last]="isLast">
                       <div class="timeline-marker">
-                        <span class="timeline-dot">{{ getHistoryActionIcon(item.accion) }}</span>
+                        <span class="timeline-dot">
+                          <app-icon [name]="getHistoryActionIcon(item.accion)" [size]="14"></app-icon>
+                        </span>
                         @if (!isLast) {
                           <div class="timeline-line"></div>
                         }
@@ -741,7 +722,7 @@
                       <div class="timeline-card">
                         <div class="timeline-card-header">
                           <div class="timeline-user-info">
-                            <span class="timeline-dot-indicator">🟢</span>
+                            <span class="timeline-dot-indicator"></span>
                             <span class="timeline-user-name">{{ item.nombreUsuario }}</span>
                             @if (item.rolUsuario) {
                               <span class="timeline-role-chip">{{ item.rolUsuario }}</span>
@@ -770,7 +751,8 @@
 
             <!-- Nota de seguridad / auditoría -->
             <div class="audit-disclaimer-note mt-4">
-              <span>🔒 <strong>Trazabilidad protegida:</strong> Los registros de responsables y acciones son grabados directamente por el sistema con la identidad criptográfica del token autenticado. Ningún usuario tiene permisos de edición o borrado sobre este historial.</span>
+              <app-icon name="lock" [size]="14"></app-icon>
+              <span><strong>Trazabilidad protegida:</strong> Los registros de responsables y acciones son grabados directamente por el sistema con la identidad criptográfica del token autenticado. Ningún usuario tiene permisos de edición o borrado sobre este historial.</span>
             </div>
           </div>
         }
@@ -780,14 +762,15 @@
     </div>
   </main>
 
-
-
   <!-- Lightbox de fotos -->
   @if (selectedPhoto) {
     <div class="photo-modal-backdrop" (click)="selectedPhoto = null">
       <div class="photo-modal-content" (click)="$event.stopPropagation()">
         <img [src]="selectedPhoto" alt="Fotografía ampliada">
-        <button type="button" class="close-modal-btn" (click)="selectedPhoto = null">✕ Cerrar Vista</button>
+        <button type="button" class="close-modal-btn" (click)="selectedPhoto = null">
+          <app-icon name="x" [size]="14"></app-icon>
+          <span>Cerrar Vista</span>
+        </button>
       </div>
     </div>
   }

@@ -33,7 +33,7 @@ export class RoleService {
       key: 'checklist',
       nombre: 'Recepción & Checklist de Ingreso',
       nombreCorto: '1. Checklist Ingreso',
-      icon: '📋',
+      icon: 'clipboard',
       responsable: 'Recepcionista / Jefe de Patio',
       roles: ['RECEPCIONISTA', 'JEFE_DE_PATIO', 'ADMINISTRADOR', 'SUPER_ADMIN', 'GERENTE_COMERCIAL', 'TECNICO', 'LUBRICADOR'],
       advanceRoles: ['RECEPCIONISTA', 'JEFE_DE_PATIO', 'ADMINISTRADOR', 'SUPER_ADMIN', 'GERENTE_COMERCIAL'],
@@ -44,7 +44,7 @@ export class RoleService {
       key: 'cotizacion',
       nombre: 'Cotización Checklist & Facturación',
       nombreCorto: '2. Cotización & Factura',
-      icon: '🧾',
+      icon: 'file-text',
       responsable: 'Gerente Comercial / Asesor',
       roles: ['GERENTE_COMERCIAL', 'ADMINISTRADOR', 'SUPER_ADMIN', 'JEFE_DE_PATIO', 'TECNICO', 'LUBRICADOR'],
       advanceRoles: ['GERENTE_COMERCIAL', 'ADMINISTRADOR', 'SUPER_ADMIN', 'JEFE_DE_PATIO'],
@@ -170,19 +170,19 @@ export class RoleService {
       case 'ADMINISTRADOR':
       case 'SUPER_ADMIN':
       case 'ADMIN':
-        return { label: 'Super Admin', icon: '👑', class: 'badge-gold' };
+        return { label: 'Super Admin', icon: 'shield', class: 'badge-default' };
       case 'GERENTE_COMERCIAL':
-        return { label: 'Gerente Comercial', icon: '💼', class: 'badge-purple' };
+        return { label: 'Gerente Comercial', icon: 'briefcase', class: 'badge-default' };
       case 'LUBRICADOR':
-        return { label: 'Lubricador', icon: '🛢️', class: 'badge-amber' };
+        return { label: 'Lubricador', icon: 'droplet', class: 'badge-default' };
       case 'TECNICO':
-        return { label: 'Técnico', icon: '🔧', class: 'badge-cyan' };
+        return { label: 'Técnico', icon: 'settings', class: 'badge-default' };
       case 'JEFE_DE_PATIO':
-        return { label: 'Jefe de Patio', icon: '🚗', class: 'badge-amber' };
+        return { label: 'Jefe de Patio', icon: 'car', class: 'badge-default' };
       case 'RECEPCIONISTA':
-        return { label: 'Recepcionista', icon: '📋', class: 'badge-green' };
+        return { label: 'Recepcionista', icon: 'clipboard', class: 'badge-default' };
       default:
-        return { label: role || 'Operador', icon: '👤', class: 'badge-default' };
+        return { label: role || 'Operador', icon: 'user', class: 'badge-default' };
     }
   }
 
