@@ -102,16 +102,13 @@ export class History implements OnInit {
       result = result.filter(o => o.pasoActual < 6 && !o.estado.includes('Entregado') && !o.estado.includes('Cerrado'));
     }
 
-    // Filter by text search (incluyendo placa)
+    // Filter by text search: placa, vehiculo, id
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
       result = result.filter(o =>
         (o.placa && o.placa.toLowerCase().includes(term)) ||
         (o.vehiculo && o.vehiculo.toLowerCase().includes(term)) ||
-        (o.cliente && o.cliente.toLowerCase().includes(term)) ||
-        (o.id && o.id.toLowerCase().includes(term)) ||
-        (o.estado && o.estado.toLowerCase().includes(term)) ||
-        (o.observaciones && o.observaciones.toLowerCase().includes(term))
+        (o.id && o.id.toLowerCase().includes(term))
       );
     }
 

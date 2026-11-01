@@ -65,7 +65,7 @@
           <input 
             type="text" 
             class="form-control" 
-            placeholder="Buscar por ID con fecha (ej: ORD-20260925), placa o cliente..."
+            placeholder="Buscar por placa, vehículo o ID de orden..."
             [(ngModel)]="searchTerm"
           >
         </div>
@@ -142,10 +142,6 @@
                     }
                   </div>
                   <h3 class="vehicle-title">{{ cleanTitle(order.vehiculo, order.placa) }}</h3>
-                  <span class="client-name">
-                    <app-icon name="user" [size]="13"></app-icon>
-                    <span>Propietario: <strong>{{ order.cliente }}</strong></span>
-                  </span>
                 </div>
                 <div class="header-right">
                   <span class="badge" [ngClass]="getEstadoClass(order.estado)">{{ order.estado }}</span>

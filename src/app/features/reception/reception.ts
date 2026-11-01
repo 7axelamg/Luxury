@@ -4,10 +4,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { Sidebar } from '../../layout/sidebar/sidebar';
 import { OrderService, OrderDto, CreateOrderDto } from '../../core/services/order';
-import { NumbersOnlyDirective } from '../../core/directives/numbers-only.directive';
 import { PlateFormatDirective } from '../../core/directives/plate-format.directive';
 import { cleanVehicleTitle, formatPlateDisplay } from '../../core/utils/vehicle-utils';
-
 import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
@@ -18,7 +16,6 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
     ReactiveFormsModule,
     RouterModule,
     Sidebar,
-    NumbersOnlyDirective,
     PlateFormatDirective,
     IconComponent
   ],
@@ -27,15 +24,13 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
 })
 export class Reception implements OnInit {
   receptionForm: FormGroup;
-  fotos: string[] = [];
   isLoading = false;
   errorMessage = '';
 
-  // Redundancia y prevención de duplicados
   allOrders: OrderDto[] = [];
   activeOrderConflict: OrderDto | null = null;
   knownVehicleSuggestion: OrderDto | null = null;
-  
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -43,41 +38,27 @@ export class Reception implements OnInit {
     private cdr: ChangeDetectorRef
   ) {
     this.receptionForm = this.fb.group({
-      // Cliente
-      nombreCliente: ['', [Validators.required, Validators.minLength(3)]],
-      telefono: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
-      documento: ['', [Validators.required, Validators.pattern(/^[0-9]{6,12}$/)]],
-      
-      // Vehículo: Formato de placa: 3 letras mayúsculas seguidas de números (máximo 6)
-      placa: ['', [Validators.required, Validators.pattern(/^[A-Z]{3}[0-9]{2,3}[A-Z]?$/)]],
-      marca: ['', [Validators.required, Validators.minLength(2)]],
-      modelo: ['', [Validators.required, Validators.minLength(2)]],
-      color: ['', [Validators.required, Validators.minLength(3)]],
-      
-      // Detalles
-      pertenencias: [''],
-      observaciones: ['']
+      placa: ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{5,6}$/)]],
+      vehiculo: ['', [Validators.required, Validators.minLength(2)]]
     });
   }
 
   ngOnInit(): void {
-    // Cargar órdenes existentes para validación de redundancia en placas
     this.orderService.getAll().subscribe({
       next: (orders) => {
         this.allOrders = orders || [];
         this.checkPlateRedundancy(this.receptionForm.get('placa')?.value);
       },
-      error: (err) => console.warn('No se pudieron precargar órdenes para validación de placa:', err)
+      error: (err) => console.warn('No se pudieron precargar órdenes:', err)
     });
 
-    // Escuchar cambios en la placa para prevenir redundancias y duplicados en tiempo real
     this.receptionForm.get('placa')?.valueChanges.subscribe((val: string) => {
       this.checkPlateRedundancy(val);
     });
   }
 
   checkPlateRedundancy(val: string | null | undefined): void {
-    const clean = (val || '').trim().toUpperCase();
+    const clean = (val || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (!clean || clean.length < 5) {
       this.activeOrderConflict = null;
       this.knownVehicleSuggestion = null;
@@ -85,15 +66,15 @@ export class Reception implements OnInit {
       return;
     }
 
-    // 1. Detectar si ya existe una orden activa en proceso para esta placa (evitar orden duplicada redundante)
     const active = this.allOrders.find(
-      o => o.placa?.toUpperCase() === clean && o.pasoActual < 6
+      o => o.placa?.toUpperCase().replace(/[^A-Z0-9]/g, '') === clean && o.pasoActual < 3
     );
     this.activeOrderConflict = active || null;
 
-    // 2. Si no hay conflicto activo, revisar si estuvo previamente para sugerir autocompletar
     if (!this.activeOrderConflict) {
-      const past = this.allOrders.find(o => o.placa?.toUpperCase() === clean);
+      const past = this.allOrders.find(
+        o => o.placa?.toUpperCase().replace(/[^A-Z0-9]/g, '') === clean
+      );
       this.knownVehicleSuggestion = past || null;
     } else {
       this.knownVehicleSuggestion = null;
@@ -103,20 +84,10 @@ export class Reception implements OnInit {
   }
 
   useKnownVehicleData(order: OrderDto): void {
-    const cleanedTitle = cleanVehicleTitle(order.vehiculo, order.placa);
-    // Intenta extraer marca y modelo del texto existente si están combinados
-    const parts = cleanedTitle.split(' ');
-    const suggestedMarca = parts[0] || '';
-    const suggestedModelo = parts.slice(1).join(' ') || '';
-
+    const suggestedVehiculo = cleanVehicleTitle(order.vehiculo, order.placa);
     this.receptionForm.patchValue({
-      nombreCliente: order.cliente || this.receptionForm.get('nombreCliente')?.value,
-      telefono: order.telefono || this.receptionForm.get('telefono')?.value,
-      documento: order.documento || this.receptionForm.get('documento')?.value,
-      marca: suggestedMarca || this.receptionForm.get('marca')?.value,
-      modelo: suggestedModelo || this.receptionForm.get('modelo')?.value,
+      vehiculo: suggestedVehiculo || order.vehiculo
     });
-
     this.knownVehicleSuggestion = null;
     this.cdr.markForCheck();
   }
@@ -143,32 +114,9 @@ export class Reception implements OnInit {
       return `Debe tener al menos ${control.errors['minlength'].requiredLength} caracteres.`;
     }
     if (control.errors['pattern']) {
-      if (fieldName === 'placa') return 'Formato requerido: 3 letras mayúsculas seguidas de números (Ej: ABC123 o ABC12D).';
-      if (fieldName === 'telefono') return 'El teléfono debe contener exactamente 10 dígitos numéricos (Ej: 3001234567).';
-      if (fieldName === 'documento') return 'El documento debe contener entre 6 y 12 dígitos numéricos.';
+      if (fieldName === 'placa') return 'Formato requerido: 5 o 6 caracteres alfanuméricos sin espacios.';
     }
     return 'Dato inválido.';
-  }
-
-  onFileSelected(event: any) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-    for (let i = 0; i < files.length; i++) {
-      if (this.fotos.length >= 5) break;
-      const file = files[i];
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.fotos.push(e.target.result);
-        this.cdr.markForCheck();
-      };
-      reader.readAsDataURL(file);
-    }
-    event.target.value = '';
-  }
-
-  removeFoto(index: number) {
-    this.fotos.splice(index, 1);
-    this.cdr.markForCheck();
   }
 
   onSubmit() {
@@ -181,28 +129,17 @@ export class Reception implements OnInit {
     this.errorMessage = '';
 
     const formValue = this.receptionForm.value;
-    const cleanPlaca = formValue.placa.trim().toUpperCase();
+    const cleanPlaca = formValue.placa.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
     const dto: CreateOrderDto = {
-      nombreCliente: formValue.nombreCliente.trim(),
-      telefono: formValue.telefono.trim(),
-      documento: formValue.documento.trim(),
       placa: cleanPlaca,
-      marca: formValue.marca.trim(),
-      modelo: formValue.modelo.trim(),
-      color: formValue.color.trim(),
-      kilometraje: 0,
-      nivelCombustible: 'N/A',
-      pertenencias: (formValue.pertenencias || '').trim(),
-      observaciones: (formValue.observaciones || '').trim(),
-      fotos: this.fotos,
+      vehiculo: formValue.vehiculo.trim()
     };
 
     this.orderService.create(dto).subscribe({
       next: (order) => {
         this.isLoading = false;
-        alert(`Orden ${order.id} creada exitosamente para la placa ${cleanPlaca}`);
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/order', order.id]);
       },
       error: (err) => {
         this.isLoading = false;

@@ -113,10 +113,6 @@
             </div>
             <div class="pending-vehicle-title">{{ cleanTitle(order.vehiculo, order.placa) }}</div>
             <div class="pending-meta-row">
-              <span class="pending-client-name">
-                <app-icon name="user" [size]="13"></app-icon>
-                <span>{{ order.cliente }}</span>
-              </span>
               <span class="pending-order-code">{{ order.id }}</span>
             </div>
             @if (order.observaciones) {

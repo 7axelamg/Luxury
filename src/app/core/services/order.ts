@@ -65,7 +65,7 @@ export interface OrderDto {
 
 export interface CreateOrderDto {
   placa: string;
-  vehiculo: string;
+  vehiculo?: string;
   nombreCliente?: string;
   telefono?: string;
   documento?: string;
