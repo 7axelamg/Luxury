@@ -1,6 +1,6 @@
 <div class="app-container">
   <app-sidebar #sidebar></app-sidebar>
-  
+
   <main class="main-content">
     <!-- Mobile Top Bar -->
     <div class="mobile-topbar">
@@ -14,7 +14,7 @@
     </div>
 
     <div class="page-wrapper">
-      
+
       @if (isLoading) {
         <div class="loading-state glass-panel">
           <span class="spinner-lg"></span>
@@ -318,17 +318,11 @@
               }
             </div>
 
-            <!-- Botón de Cierre y Avance a Cotización -->
+            <!-- Botón de Cierre y Avance a Cotización: solo un botón de continuar -->
             <div class="mobile-checklist-footer">
-              @if (checklistSummary.cotizar > 0) {
-                <div class="mobile-alert-banner">
-                  <app-icon name="alert-circle" [size]="16"></app-icon>
-                  <span><strong>{{ checklistSummary.cotizar }}</strong> ítems detectados para cotización y factura</span>
-                </div>
-              }
               @if (puedeGestionarPaso(1)) {
-                <button type="button" class="btn-continue-cotizacion" (click)="sincronizarHallazgosConCotizacion()">
-                  <span>Avanzar a Cotización & Factura (Paso 2)</span>
+                <button type="button" class="btn-continue-cotizacion" (click)="abrirConfirmacionChecklist()">
+                  <span>Continuar</span>
                   <app-icon name="arrow-right" [size]="15"></app-icon>
                 </button>
               }
@@ -495,11 +489,17 @@
 
                   <!-- TABLA DE DETALLE DE LA FACTURA -->
                   <table class="invoice-table">
+                    <colgroup>
+                      <col class="invoice-description-column">
+                      <col class="invoice-quantity-column">
+                      <col class="invoice-unit-column">
+                      <col class="invoice-total-column">
+                    </colgroup>
                     <thead>
                       <tr>
                         <th>DESCRIPCIÓN DEL SERVICIO / REPUESTO</th>
-                        <th class="text-center">CANT</th>
-                        <th class="text-right">VALOR UNIT.</th>
+                        <th class="text-center">CANT.</th>
+                        <th class="text-right">V. UNIT.</th>
                         <th class="text-right">TOTAL</th>
                       </tr>
                     </thead>
@@ -529,12 +529,13 @@
                   <div class="invoice-totals-section">
                     <div class="invoice-payment-method">
                       <label class="payment-method-label">Forma de Pago:</label>
-                      <select class="form-control form-control-sm payment-select" [(ngModel)]="formaPagoFactura">
+                      <select class="form-control form-control-sm payment-select no-print" [(ngModel)]="formaPagoFactura">
                         <option value="Transferencia Bancaria / PSE">Transferencia Bancaria / PSE</option>
                         <option value="Tarjeta de Crédito / Débito">Tarjeta de Crédito / Débito</option>
                         <option value="Efectivo en Caja">Efectivo en Caja</option>
                         <option value="Crédito Corporativo (30 días)">Crédito Corporativo (30 días)</option>
                       </select>
+                      <span class="print-payment-value">{{ formaPagoFactura }}</span>
                     </div>
 
                     <div class="invoice-summary-box">
@@ -771,6 +772,140 @@
           <app-icon name="x" [size]="14"></app-icon>
           <span>Cerrar Vista</span>
         </button>
+      </div>
+    </div>
+  }
+  <!-- ══════════════════════════════════════════════════════════════════
+       HOJA DE CONFIRMACIÓN AL FINALIZAR CHECKLIST (BOTTOM SHEET / MODAL)
+       ══════════════════════════════════════════════════════════════════ -->
+  @if (showChecklistConfirmation) {
+    <div class="confirm-sheet-overlay" (click)="cerrarConfirmacionChecklist()">
+      <div class="confirm-sheet-container" (click)="$event.stopPropagation()">
+
+        <!-- Pull Handle para versión móvil -->
+        <div class="sheet-drag-handle"></div>
+
+        <!-- Encabezado de la confirmación -->
+        <div class="confirm-sheet-header">
+          <div class="confirm-sheet-title-group">
+            <h3 class="confirm-sheet-title">Confirmación de Checklist de Ingreso</h3>
+            <p class="confirm-sheet-subtitle">Revise el resumen de la inspección antes de avanzar de etapa.</p>
+          </div>
+          <button type="button" class="confirm-sheet-close" (click)="cerrarConfirmacionChecklist()" aria-label="Cerrar">
+            <app-icon name="x" [size]="16"></app-icon>
+          </button>
+        </div>
+
+        <!-- Cuerpo / Resumen y Opciones -->
+        <div class="confirm-sheet-body">
+
+          <!-- Resumen: cantidad de ítems en Bien, Próximo y Por cotizar -->
+          <div class="confirm-summary-card">
+            <div class="confirm-summary-header">
+              <span class="confirm-summary-label">Resumen de inspección</span>
+            </div>
+
+            <div class="confirm-badges-row">
+              <div class="summary-pill pill-bien">
+                <span class="pill-dot"></span>
+                <span class="pill-count">{{ itemsBien.length }}</span>
+                <span class="pill-name">Bien</span>
+              </div>
+              <div class="summary-pill pill-proximo">
+                <span class="pill-dot"></span>
+                <span class="pill-count">{{ itemsProximo.length }}</span>
+                <span class="pill-name">Próximo</span>
+              </div>
+              <div class="summary-pill pill-cotizar">
+                <span class="pill-dot"></span>
+                <span class="pill-count">{{ itemsCotizar.length }}</span>
+                <span class="pill-name">Por cotizar</span>
+              </div>
+            </div>
+
+            <!-- Nombres de ítems Próximo -->
+            @if (itemsProximo.length > 0) {
+              <div class="items-list-block">
+                <span class="items-list-title">Ítems Próximo:</span>
+                <span class="items-list-text">
+                  @for (it of itemsProximo; track it.id; let last = $last) {
+                    {{ it.item }}{{ last ? '' : ', ' }}
+                  }
+                </span>
+              </div>
+            }
+
+            <!-- Nombres de ítems Por cotizar -->
+            @if (itemsCotizar.length > 0) {
+              <div class="items-list-block">
+                <span class="items-list-title">Ítems Por cotizar:</span>
+                <span class="items-list-text text-cotizar">
+                  @for (it of itemsCotizar; track it.id; let last = $last) {
+                    {{ it.item }}{{ last ? '' : ', ' }}
+                  }
+                </span>
+              </div>
+            }
+
+            <!-- Requisito 2: Si hay 0 ítems Por cotizar, aviso neutro -->
+            @if (itemsCotizar.length === 0) {
+              <div class="neutral-notice">
+                <app-icon name="info" [size]="14"></app-icon>
+                <span>No hay ítems para cotizar</span>
+              </div>
+            }
+          </div>
+
+          <!-- Notificación opcional (no obligatoria) -->
+          <div class="confirm-options-group">
+            <label class="confirm-notify-checkbox-card" [class.checked]="deseaNotificar">
+              <input
+                type="checkbox"
+                [(ngModel)]="deseaNotificar"
+                class="notify-checkbox"
+              />
+              <div class="option-content">
+                <strong class="option-title">Notificar al equipo</strong>
+                <span class="option-desc">
+                  Envía aviso a Gerente Comercial, Técnico y Lubricador para agilizar la cotización.
+                </span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Motivo u observación opcional -->
+          <div class="confirm-motivo-box">
+            <label class="form-label-sm" for="motivoContinuarSinNotif">
+              Observación o motivo (opcional)
+            </label>
+            <input
+              id="motivoContinuarSinNotif"
+              type="text"
+              class="form-control form-control-sm"
+              [(ngModel)]="motivoContinuar"
+              placeholder="Detalle o nota interna..."
+              maxlength="255"
+            />
+          </div>
+
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="confirm-sheet-footer">
+          <button type="button" class="btn btn-outline" (click)="cerrarConfirmacionChecklist()" [disabled]="isAdvancing">
+            Volver al checklist
+          </button>
+          <button type="button" class="btn btn-primary" (click)="confirmarYContinuarChecklist()" [disabled]="isAdvancing">
+            @if (isAdvancing) {
+              <span class="spinner-sm"></span>
+              <span>Guardando...</span>
+            } @else {
+              <span>Continuar</span>
+              <app-icon name="arrow-right" [size]="14"></app-icon>
+            }
+          </button>
+        </div>
+
       </div>
     </div>
   }

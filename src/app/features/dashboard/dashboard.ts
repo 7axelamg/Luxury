@@ -174,8 +174,15 @@ export class Dashboard implements OnInit {
     }).length;
   }
 
-  getProgreso(pasoActual: number): number {
-    return Math.min(Math.round((pasoActual / 5) * 100), 100);
+  getProgressLabel(pasoActual: number): string {
+    switch (pasoActual) {
+      case 1:
+        return 'Recibido';
+      case 2:
+        return 'Pendiente por cotización';
+      default:
+        return 'Entregado';
+    }
   }
 
   getEstadoClass(estado: string): string {

@@ -208,14 +208,20 @@
             <!-- Progress Footer -->
             <div class="card-progress-footer">
               <div class="progress-steps-row">
-                @for (step of [1,2,3]; track step) {
+                @for (step of [1,2]; track step) {
                 <div class="prog-step" [class.prog-done]="order.pasoActual > step"
                   [class.prog-active]="order.pasoActual === step"></div>
                 }
               </div>
               <div class="progress-legend">
-                <span class="prog-label">Etapa {{ order.pasoActual }} de 3</span>
-                <span class="prog-pct">{{ getProgreso(order.pasoActual) }}%</span>
+                <span class="prog-label">
+                  @if (order.pasoActual <= 2) {
+                    Paso {{ order.pasoActual }} de 2
+                  } @else {
+                    Finalizado
+                  }
+                </span>
+                <span class="prog-status">{{ getProgressLabel(order.pasoActual) }}</span>
               </div>
             </div>
 

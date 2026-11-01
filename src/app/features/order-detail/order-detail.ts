@@ -6,6 +6,7 @@ import { Sidebar } from '../../layout/sidebar/sidebar';
 import { ChecklistItem } from '../../core/models/models';
 import { OrderService, OrderDto, ActionHistoryDto } from '../../core/services/order';
 import { RoleService } from '../../core/services/role.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { cleanVehicleTitle } from '../../core/utils/vehicle-utils';
 
 import { IconComponent } from '../../shared/ui/icon/icon.component';
@@ -130,6 +131,89 @@ export class OrderDetail implements OnInit {
       cambioYa: cotizar,
       na: 0
     };
+  }
+
+  // ─── Modal / Bottom Sheet de Confirmación Checklist ──────────────────────
+  showChecklistConfirmation: boolean = false;
+  deseaNotificar: boolean = false;
+  motivoContinuar: string = '';
+
+  get itemsBien() {
+    return this.vehicleChecklist.filter(
+      (i) => i.estado === 'BIEN' || (i as any).estado === 'OPTIMO' || (i as any).estado === 'B/SI',
+    );
+  }
+
+  get itemsProximo() {
+    return this.vehicleChecklist.filter((i) => i.estado === 'PROXIMO');
+  }
+
+  get itemsCotizar() {
+    return this.vehicleChecklist.filter(
+      (i) => i.estado === 'COTIZAR' || (i as any).estado === 'CAMBIO_YA' || (i as any).estado === 'M/NO',
+    );
+  }
+
+  abrirConfirmacionChecklist() {
+    this.deseaNotificar = false;
+    this.motivoContinuar = '';
+    this.showChecklistConfirmation = true;
+    this.cdr.markForCheck();
+  }
+
+  cerrarConfirmacionChecklist() {
+    this.showChecklistConfirmation = false;
+    this.cdr.markForCheck();
+  }
+
+  confirmarYContinuarChecklist() {
+    if (this.isAdvancing) return;
+    this.isAdvancing = true;
+
+    // Sincronizar hallazgos con cotización antes de avanzar
+    this.vehicleChecklist.forEach((i) => {
+      if (
+        (i.estado === 'COTIZAR' || (i as any).estado === 'CAMBIO_YA' || (i as any).estado === 'M/NO') &&
+        i.servicioId
+      ) {
+        const match = this.servicesCotizacionList.find((s) => s.id === i.servicioId);
+        if (match) match.seleccionado = true;
+      }
+    });
+    this.saveDraft();
+
+    const notificar = this.deseaNotificar;
+    const motivo = this.motivoContinuar.trim();
+    const cotizarCount = this.itemsCotizar.length;
+
+    this.orderService
+      .advanceStep(this.orderId, {
+        notificar,
+        motivo: motivo || undefined,
+        itemsPorCotizar: cotizarCount,
+        hayItemsPorCotizar: cotizarCount > 0,
+      })
+      .subscribe({
+        next: (updatedOrder) => {
+          this.order = updatedOrder;
+          this.isAdvancing = false;
+          this.showChecklistConfirmation = false;
+          this.loadHistory();
+          if (notificar) {
+            this.notificationService.refresh(this.currentUser?.role);
+          }
+          this.setTab('cotizacion');
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.isAdvancing = false;
+          this.cdr.markForCheck();
+          const msg =
+            err?.error?.message ||
+            'Error al avanzar la orden. Verifique los permisos o la conexión con el servidor.';
+          alert(msg);
+        },
+      });
   }
 
   // ─── Local Draft Storage ──────────────────────────────────────────────────
@@ -316,6 +400,7 @@ export class OrderDetail implements OnInit {
     private router: Router,
     private orderService: OrderService,
     public roleService: RoleService,
+    private notificationService: NotificationService,
     private cdr: ChangeDetectorRef
   ) {}
 

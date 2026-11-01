@@ -791,6 +791,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   width: 100%;
 }
 
@@ -801,10 +802,12 @@
   letter-spacing: 0.02em;
 }
 
-.prog-pct {
-  font-size: 0.75rem;
-  font-weight: 800;
+.prog-status {
+  max-width: 65%;
+  font-size: 0.72rem;
+  font-weight: 700;
   color: #C8102E;
+  text-align: right;
 }
 
 
@@ -1295,4 +1298,3 @@
   border-radius: 4px;
   margin-top: 4px;
 }
-

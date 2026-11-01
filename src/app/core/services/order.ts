@@ -104,8 +104,11 @@ export class OrderService {
     return this.http.post<OrderDto>(this.apiUrl, dto);
   }
 
-  advanceStep(id: string): Observable<OrderDto> {
-    return this.http.put<OrderDto>(`${this.apiUrl}/${id}/advance`, {});
+  advanceStep(
+    id: string,
+    data?: { notificar?: boolean; motivo?: string; itemsPorCotizar?: number; hayItemsPorCotizar?: boolean },
+  ): Observable<OrderDto> {
+    return this.http.put<OrderDto>(`${this.apiUrl}/${id}/advance`, data || {});
   }
 
   setStep(id: string, step: number): Observable<OrderDto> {
