@@ -64,15 +64,16 @@ export interface OrderDto {
 }
 
 export interface CreateOrderDto {
-  nombreCliente: string;
-  telefono: string;
-  documento: string;
   placa: string;
-  marca: string;
-  modelo: string;
-  color: string;
-  kilometraje: number;
-  nivelCombustible: string;
+  vehiculo: string;
+  nombreCliente?: string;
+  telefono?: string;
+  documento?: string;
+  marca?: string;
+  modelo?: string;
+  color?: string;
+  kilometraje?: number;
+  nivelCombustible?: string;
   pertenencias?: string;
   observaciones?: string;
   fotos?: string[];

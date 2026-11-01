@@ -127,7 +127,7 @@
           </div>
           <div class="orders-search">
             <app-icon name="search" [size]="16" extraClass="search-icon"></app-icon>
-            <input type="text" class="search-input" placeholder="Buscar por placa, cliente o ID de orden..."
+            <input type="text" class="search-input" placeholder="Buscar por placa, vehículo o ID de orden..."
               [(ngModel)]="searchTerm">
           </div>
         </div>
@@ -185,12 +185,8 @@
               </span>
             </div>
 
-            <!-- Info Grid 2x2 -->
+            <!-- Info Grid -->
             <div class="card-info-grid">
-              <div class="card-info-cell">
-                <span class="cell-label"><app-icon name="user" [size]="12"></app-icon> Cliente</span>
-                <span class="cell-value">{{ order.cliente }}</span>
-              </div>
               <div class="card-info-cell">
                 <span class="cell-label"><app-icon name="clipboard" [size]="12"></app-icon> Etapa Actual</span>
                 <span class="cell-value cell-stage">{{ getPasoLabel(order.pasoActual) }}</span>

@@ -134,16 +134,13 @@ export class Dashboard implements OnInit {
       result = result.filter(o => !o.estado.includes('Entregado') && !o.estado.includes('Cerrado'));
     }
 
-    // 2. Búsqueda por texto (incluyendo placa)
+    // 2. Búsqueda por placa, vehículo y número de orden
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
       result = result.filter(order =>
         (order.placa && order.placa.toLowerCase().includes(term)) ||
         (order.vehiculo && order.vehiculo.toLowerCase().includes(term)) ||
-        (order.cliente && order.cliente.toLowerCase().includes(term)) ||
-        (order.id && order.id.toLowerCase().includes(term)) ||
-        (order.estado && order.estado.toLowerCase().includes(term)) ||
-        (order.observaciones && order.observaciones.toLowerCase().includes(term))
+        (order.id && order.id.toLowerCase().includes(term))
       );
     }
 

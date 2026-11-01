@@ -46,7 +46,6 @@
                 <span class="badge-status-corporate">{{ order.estado }}</span>
               </div>
               <h1 class="page-title">{{ cleanTitle(order.vehiculo, order.placa) }}</h1>
-              <p class="text-muted mb-0">Propietario: <strong>{{ order.cliente }}</strong></p>
               
               <div class="order-trace-header-meta">
                 <span class="trace-header-pill">
@@ -474,16 +473,16 @@
 
                   <div class="invoice-client-row mt-3 mb-3">
                     <div class="client-info-col">
-                      <span class="info-label">DATOS DEL CLIENTE:</span>
-                      <strong class="info-name">{{ order.cliente }}</strong>
-                      <span class="info-meta">C.C. / NIT: {{ order.documento || '1098273645' }}</span>
-                      <span class="info-meta">Teléfono: {{ order.telefono || '+57 310 889 2211' }}</span>
-                    </div>
-                    <div class="client-info-col text-right">
                       <span class="info-label">DATOS DEL VEHÍCULO:</span>
                       <strong class="info-name">{{ cleanTitle(order.vehiculo, order.placa) }}</strong>
                       <span class="info-meta">Placa: <strong style="color: #C8102E;">{{ order.placa }}</strong></span>
-                      <span class="info-meta">Kilometraje: {{ order.kilometraje | number }} km</span>
+                    </div>
+                    <div class="client-info-col text-right">
+                      <span class="info-label">DETALLES DE SERVICIO:</span>
+                      <span class="info-meta">Orden: #{{ order.id }}</span>
+                      @if (order.kilometraje) {
+                        <span class="info-meta">Kilometraje: {{ order.kilometraje | number }} km</span>
+                      }
                     </div>
                   </div>
 

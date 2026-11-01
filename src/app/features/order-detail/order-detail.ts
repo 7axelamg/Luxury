@@ -382,7 +382,7 @@ export class OrderDetail implements OnInit {
   enviarFacturaWhatsApp() {
     if (!this.order) return;
     const vehiculoLimpio = this.cleanTitle(this.order.vehiculo, this.order.placa);
-    const msg = `Hola *${this.order.cliente}*, le compartimos su Factura de Servicio en *Luxury Service Car Home* para su vehículo *${vehiculoLimpio}* (Placa: ${this.order.placa}):\n\n` +
+    const msg = `Factura de Servicio en *Luxury Service Car Home* para el vehículo *${vehiculoLimpio}* (Placa: ${this.order.placa}):\n\n` +
       `*Factura:* #FAC-${this.order.id}\n` +
       `*Subtotal:* $${this.subtotalFactura.toLocaleString()} COP\n` +
       `*IVA (19%):* $${this.ivaFactura.toLocaleString()} COP\n` +
@@ -390,7 +390,7 @@ export class OrderDetail implements OnInit {
       `*Forma de Pago:* ${this.formaPagoFactura}\n\n` +
       `¡Muchas gracias por su confianza!`;
     const phoneClean = (this.order.telefono || '').replace(/\D/g, '');
-    const url = `https://wa.me/${phoneClean}?text=${encodeURIComponent(msg)}`;
+    const url = phoneClean ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   }
 
